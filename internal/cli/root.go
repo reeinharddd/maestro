@@ -1,0 +1,699 @@
+package cli
+
+import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/reeinharrrd/opencode-kit/internal/audit"
+	"github.com/reeinharrrd/opencode-kit/internal/db"
+	"github.com/reeinharrrd/opencode-kit/internal/discover"
+	"github.com/reeinharrrd/opencode-kit/internal/generator"
+	"github.com/reeinharrrd/opencode-kit/internal/heal"
+	"github.com/reeinharrrd/opencode-kit/internal/profile"
+	"github.com/reeinharrrd/opencode-kit/internal/routing"
+	"github.com/reeinharrrd/opencode-kit/internal/sync"
+)
+
+func NewRootCmd() *cobra.Command {
+	var dbPath string
+
+	root := &cobra.Command{
+		Use:   "okit",
+		Short: "opencode-kit - OpenCode infrastructure manager",
+		Long: `opencode-kit manages OpenCode configuration: discovers models,
+audits capabilities, generates optimal config, and auto-heals issues.
+
+  okit discover     Fetch models from provider catalogs
+  okit audit        Test model capabilities
+  okit generate     Generate OpenCode config files
+  okit daily        Full daily pipeline
+  okit status       Show system status
+  okit query        Run SQL query against DB`,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() == "help" || cmd.Name() == "completion" {
+				return nil
+			}
+			return nil
+		},
+	}
+
+	root.PersistentFlags().StringVar(&dbPath, "db", "", "Path to SQLite database (default: auto-detect)")
+
+	root.AddCommand(newDiscoverCmd(&dbPath))
+	root.AddCommand(newAuditCmd(&dbPath))
+	root.AddCommand(newGenerateCmd(&dbPath))
+	root.AddCommand(newDailyCmd(&dbPath))
+	root.AddCommand(newStatusCmd(&dbPath))
+	root.AddCommand(newQueryCmd(&dbPath))
+	root.AddCommand(newProvidersCmd(&dbPath))
+	root.AddCommand(newModelsCmd(&dbPath))
+	root.AddCommand(newSyncCmd(&dbPath))
+	root.AddCommand(newSourcesCmd(&dbPath))
+	root.AddCommand(newProfileCmd(&dbPath))
+	root.AddCommand(newRouteCmd(&dbPath))
+	root.AddCommand(newHealCmd(&dbPath))
+	root.AddCommand(newKeysCmd())
+	root.AddCommand(newVerifyCmd())
+	root.AddCommand(newDoctorCmd())
+	root.AddCommand(newInitCmd())
+	root.AddCommand(newMcpCmd())
+	root.AddCommand(newCompressCmd())
+	root.AddCommand(newValidateCmd(&dbPath))
+	root.AddCommand(newModelsViewCmd(&dbPath))
+	root.AddCommand(newBudgetCmd(&dbPath))
+	root.AddCommand(newLSPServersCmd(&dbPath))
+	root.AddCommand(newSnapshotsCmd(&dbPath))
+	root.AddCommand(newPreferencesCmd(&dbPath))
+	root.AddCommand(newSkillsCmd(&dbPath))
+	root.AddCommand(newSourceItemsCmd(&dbPath))
+	root.AddCommand(newExecLogCmd(&dbPath))
+	root.AddCommand(newModelProfilesCmd(&dbPath))
+
+	return root
+}
+
+func openDB(path *string) (*db.DB, error) {
+	p := ""
+	if path != nil {
+		p = *path
+	}
+	if p == "" {
+		p = db.DefaultPath()
+	}
+	return db.Open(p)
+}
+
+func runHeal(d *db.DB) (*heal.HealReport, error) {
+	return heal.New(d).Run(context.Background())
+}
+
+func newDiscoverCmd(dbPath *string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "discover",
+		Short: "Discover models from provider catalogs",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			dis := discover.NewService(discover.NewServiceParams{DB: d})
+			if err := dis.Discover(cmd.Context()); err != nil {
+				return fmt.Errorf("discover: %w", err)
+			}
+			fmt.Println("Discovery complete.")
+			return nil
+		},
+	}
+}
+
+func newAuditCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "audit",
+		Short: "Test model capabilities",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			full, _ := cmd.Flags().GetBool("full")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			svc := audit.New(d, 5)
+			return svc.Run(cmd.Context(), full)
+		},
+	}
+	cmd.Flags().Bool("full", false, "Test all models (default: only new + errored)")
+	return cmd
+}
+
+func newGenerateCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "generate",
+		Short: "Generate OpenCode configuration files",
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:   "config",
+		Short: "Generate opencode.jsonc",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			svc := generator.NewService(d, "")
+			return svc.GenerateConfig()
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "agents",
+		Short: "Generate agents/*.md files",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			svc := generator.NewService(d, "")
+			return svc.GenerateAgents()
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "commands",
+		Short: "Generate commands/*.md files",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			svc := generator.NewService(d, "")
+			return svc.GenerateCommands()
+		},
+	})
+	return cmd
+}
+
+func newDailyCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "daily",
+		Short: "Run full daily pipeline",
+		Long: `Full daily pipeline:
+  1. Backup snapshot
+  2. Sync sources
+  3. Discover models
+  4. Audit models
+  5. Generate config files
+  6. Validate
+  7. Heal if needed`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			full, _ := cmd.Flags().GetBool("full")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			fmt.Println("=== Daily Pipeline ===")
+
+			// 1. Backup
+			fmt.Println("[1/6] Backup...")
+			backupDir := filepath.Join(filepath.Dir(d.DBPath()), "backups")
+			os.MkdirAll(backupDir, 0755)
+			backupPath := filepath.Join(backupDir, fmt.Sprintf("opencode-kit-%s.tar.gz", time.Now().UTC().Format("2006-01-02T15-04-05")))
+			if err := createBackup(d.DBPath(), backupPath); err != nil {
+				fmt.Printf("  Warning: backup failed: %v\n", err)
+			} else {
+				fmt.Printf("  Backup: %s\n", backupPath)
+				cleanupOldBackups(backupDir, 30*24*time.Hour)
+			}
+
+			// 2. Discover
+			fmt.Println("[2/6] Discovering models...")
+			dis := discover.NewService(discover.NewServiceParams{DB: d})
+			if err := dis.Discover(cmd.Context()); err != nil {
+				fmt.Printf("  Warning: discover: %v\n", err)
+			}
+
+			// 3. Audit
+			fmt.Println("[3/6] Auditing models...")
+			aud := audit.New(d, 5)
+			if err := aud.Run(cmd.Context(), full); err != nil {
+				fmt.Printf("  Warning: audit: %v\n", err)
+			}
+
+			// 4. Generate
+			fmt.Println("[4/6] Generating configuration...")
+			gen := generator.NewService(d, "")
+			if err := gen.GenerateConfig(); err != nil {
+				fmt.Printf("  Warning: generate config: %v\n", err)
+			}
+
+			// 5. Stats
+			fmt.Println("[5/8] Collecting stats...")
+			stats, err := d.GetStats()
+			if err == nil {
+				fmt.Printf("  Active models: %d\n", stats["active"])
+				fmt.Printf("  Error models:  %d\n", stats["error"])
+				fmt.Printf("  Untested:      %d\n", stats["untested"])
+				fmt.Printf("  Providers:     %d\n", stats["providers_active"])
+			}
+
+			fmt.Println("[6/8] Profiling models...")
+			prof := profile.New(d)
+			if err := prof.ProfileAll(cmd.Context(), false); err != nil {
+				fmt.Printf("  Warning: profile: %v\n", err)
+			}
+
+			fmt.Println("[7/8] Reassigning routing...")
+			router := routing.New(d)
+			if err := router.ReassignAll(cmd.Context()); err != nil {
+				fmt.Printf("  Warning: route: %v\n", err)
+			}
+
+			fmt.Println("[8/8] Running auto-healing...")
+			healer := heal.New(d)
+			if report, err := healer.Run(cmd.Context()); err != nil {
+				fmt.Printf("  Warning: heal: %v\n", err)
+			} else if report.IssuesFound > 0 {
+				fmt.Printf("  Healing: %d issues found, %d fixed\n", report.IssuesFound, report.IssuesFixed)
+			}
+
+			fmt.Println("Daily pipeline complete.")
+			return nil
+		},
+	}
+	cmd.Flags().Bool("full", false, "Full re-audit of all models")
+	return cmd
+}
+
+func newStatusCmd(dbPath *string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show system status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			stats, err := d.GetStats()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("=== opencode-kit Status ===")
+			fmt.Printf("DB: %s\n", d.DBPath())
+			fmt.Println()
+			fmt.Println("Models by status:")
+			for _, s := range []string{"active", "error", "untested", "deprecated", "paid"} {
+				if c, ok := stats[s]; ok {
+					fmt.Printf("  %s: %d\n", s, c)
+				}
+			}
+			if p, ok := stats["providers_active"]; ok {
+				fmt.Printf("\nActive providers: %d\n", p)
+			}
+
+			providers, err := d.ListProviders()
+			if err == nil && len(providers) > 0 {
+				fmt.Println("\nProviders:")
+				for _, p := range providers {
+					fmt.Printf("  %s (status: %s)\n", p.ID, p.Status)
+				}
+			}
+			return nil
+		},
+	}
+}
+
+func newQueryCmd(dbPath *string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "query",
+		Short: "Run SQL query against DB",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			query := strings.Join(args, " ")
+			rows, err := d.Query(query)
+			if err != nil {
+				return fmt.Errorf("query: %w", err)
+			}
+			defer rows.Close()
+
+			cols, _ := rows.Columns()
+			fmt.Println(strings.Join(cols, " | "))
+			fmt.Println(strings.Repeat("-", len(cols)*12))
+
+			var rowVals []any = make([]any, len(cols))
+			rowPtrs := make([]any, len(cols))
+			for i := range rowVals {
+				rowPtrs[i] = &rowVals[i]
+			}
+
+			for rows.Next() {
+				if err := rows.Scan(rowPtrs...); err != nil {
+					return err
+				}
+				strVals := make([]string, len(cols))
+				for i, v := range rowVals {
+					if v == nil {
+						strVals[i] = "NULL"
+					} else {
+						strVals[i] = fmt.Sprintf("%v", v)
+					}
+				}
+				fmt.Println(strings.Join(strVals, " | "))
+			}
+			return nil
+		},
+	}
+}
+
+func newProvidersCmd(dbPath *string) *cobra.Command {
+	return newProvidersCmdImpl(dbPath)
+}
+
+func newModelsCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "models",
+		Short: "Manage models",
+	}
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			paid, _ := cmd.Flags().GetBool("paid")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			var opts []db.ModelFilter
+			if !paid {
+				opts = append(opts, db.StatusActive())
+				opts = append(opts, db.Tier("free"))
+			}
+			models, err := d.ListModels(opts...)
+			if err != nil {
+				return err
+			}
+			if len(models) == 0 && !paid {
+				// If no active models, show untested ones
+				allModels, _ := d.ListModels()
+				models = allModels
+			}
+			fmt.Printf("%-35s %-15s %-8s %-12s %s\n", "Model", "Provider", "Context", "FC", "Status")
+			fmt.Println(strings.Repeat("-", 85))
+			for _, m := range models {
+				fc := "✓"
+				if !m.FunctionCalling {
+					fc = "-"
+				}
+				ctx := fmt.Sprintf("%dK", m.ContextWindow/1000)
+				fmt.Printf("%-35s %-15s %-8s %-12s %s\n", m.ID, m.ProviderID, ctx, fc, m.Status)
+			}
+			return nil
+		},
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:   "search",
+		Short: "Search models",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			models, err := d.SearchModels(args[0])
+			if err != nil {
+				return err
+			}
+			for _, m := range models {
+				fmt.Printf("%s/%s: %s (ctx: %d, FC: %v)\n", m.ProviderID, m.ID, m.Status, m.ContextWindow, m.FunctionCalling)
+			}
+			return nil
+		},
+	})
+	cmd.AddCommand(listCmd)
+	listCmd.Flags().Bool("paid", false, "Include paid models")
+	return cmd
+}
+
+func newSyncCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sync",
+		Short: "Bidirectional sync between DB and opencode.jsonc",
+		Long: `Bidirectional sync: imports changes from opencode.jsonc into DB,
+then exports DB back to opencode.jsonc. Keeps both in sync.
+
+Use after manually editing opencode.jsonc, or after running
+discover/audit/heal to push results to the config file.`,
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:   "bidirectional",
+		Short: "Sync both directions (import → export)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			configPath := findConfigPath(d)
+			svc := sync.New(d)
+
+			fmt.Println("Syncing opencode.jsonc → DB...")
+			inDiff, err := svc.ImportFromOpenCodeConfig(configPath)
+			if err != nil {
+				return fmt.Errorf("import: %w", err)
+			}
+			fmt.Printf("  New providers: %d, new agents: %d, new commands: %d\n",
+				len(inDiff.AddedProviders), len(inDiff.AddedAgents), len(inDiff.AddedCommands))
+
+			fmt.Println("Syncing DB → opencode.jsonc...")
+			if err := svc.ExportToOpenCodeConfig(configPath); err != nil {
+				return fmt.Errorf("export: %w", err)
+			}
+			fmt.Println("  opencode.jsonc updated.")
+
+			fmt.Println("Sync complete.")
+			return nil
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "import",
+		Short: "Import opencode.jsonc → DB only",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			svc := sync.New(d)
+			configPath := findConfigPath(d)
+			diff, err := svc.ImportFromOpenCodeConfig(configPath)
+			if err != nil {
+				return fmt.Errorf("import: %w", err)
+			}
+			fmt.Printf("Import complete. New providers: %d, new agents: %d, new commands: %d\n",
+				len(diff.AddedProviders), len(diff.AddedAgents), len(diff.AddedCommands))
+			return nil
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "export",
+		Short: "Export DB → opencode.jsonc only",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			svc := sync.New(d)
+			configPath := findConfigPath(d)
+			if err := svc.ExportToOpenCodeConfig(configPath); err != nil {
+				return fmt.Errorf("export: %w", err)
+			}
+			fmt.Println("Export complete: opencode.jsonc updated.")
+			return nil
+		},
+	})
+	return cmd
+}
+
+func findConfigPath(d *db.DB) string {
+	configPath := OpenCodeConfigPath()
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			configPath = filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")
+	}
+	return configPath
+}
+
+func newSourcesCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "sources",
+		Short: "Manage external sources",
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List external sources",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			sources, err := d.ListSources()
+			if err != nil {
+				return err
+			}
+			if len(sources) == 0 {
+				fmt.Println("No sources configured")
+				return nil
+			}
+			for _, s := range sources {
+				fmt.Printf("%s: %s (%s)\n", s.ID, s.RemoteURL, s.Status)
+			}
+			return nil
+		},
+	})
+	return cmd
+}
+
+func newProfileCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "profile",
+		Short: "Profile all active models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			full, _ := cmd.Flags().GetBool("full")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			return profile.New(d).ProfileAll(cmd.Context(), full)
+		},
+	}
+	cmd.Flags().Bool("full", false, "Full detailed profiling")
+	return cmd
+}
+
+func newRouteCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "route",
+		Short: "Show or reassign model routing",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			task, _ := cmd.Flags().GetString("task")
+			reassign, _ := cmd.Flags().GetBool("reassign")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			r := routing.New(d)
+			if reassign {
+				return r.ReassignAll(cmd.Context())
+			}
+			if task != "" {
+				budget, _ := d.GetBudget()
+				rule, err := r.SelectBestModel(task, *budget)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("Best model for %s: %s\n", task, rule.CurrentModelID)
+				if rule.FallbackIDs != "" {
+					var fallbacks []string
+					if err := json.Unmarshal([]byte(rule.FallbackIDs), &fallbacks); err == nil && len(fallbacks) > 0 {
+						fmt.Printf("Fallback chain: %s\n", strings.Join(fallbacks, " -> "))
+					}
+				}
+				return nil
+			}
+			rules, err := d.ListRoutingRules()
+			if err != nil {
+				return err
+			}
+			for _, rule := range rules {
+				fmt.Printf("%s: %s\n", rule.TaskKey, rule.CurrentModelID)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().String("task", "", "Task type (coding_complex, coding_fast, reasoning, vision, long_context, fastest)")
+	cmd.Flags().Bool("reassign", false, "Reassign all routing rules")
+	return cmd
+}
+
+func newHealCmd(dbPath *string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "heal",
+		Short: "Run auto-healing checks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			report, err := heal.New(d).Run(cmd.Context())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Issues found: %d, fixed: %d\n", report.IssuesFound, report.IssuesFixed)
+			for _, issue := range report.Issues {
+				status := "FIXED"
+				if !issue.Fixed {
+					status = "WARN"
+				}
+				fmt.Printf("  [%s] [%s] %s\n", status, issue.Severity, issue.Message)
+			}
+			return nil
+		},
+	}
+}
+
+func createBackup(dbPath, backupPath string) error {
+	buf := &bytes.Buffer{}
+	gw := gzip.NewWriter(buf)
+	tw := tar.NewWriter(gw)
+
+	data, err := os.ReadFile(dbPath)
+	if err != nil {
+		return fmt.Errorf("read db: %w", err)
+	}
+
+	hdr := &tar.Header{
+		Name: filepath.Base(dbPath),
+		Size: int64(len(data)),
+		Mode: 0644,
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return fmt.Errorf("tar header: %w", err)
+	}
+	if _, err := tw.Write(data); err != nil {
+		return fmt.Errorf("tar write: %w", err)
+	}
+	if err := tw.Close(); err != nil {
+		return fmt.Errorf("tar close: %w", err)
+	}
+	if err := gw.Close(); err != nil {
+		return fmt.Errorf("gzip close: %w", err)
+	}
+
+	return os.WriteFile(backupPath, buf.Bytes(), 0644)
+}
+
+func cleanupOldBackups(dir string, maxAge time.Duration) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	cutoff := time.Now().Add(-maxAge)
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().Before(cutoff) {
+			os.Remove(filepath.Join(dir, info.Name()))
+		}
+	}
+}
