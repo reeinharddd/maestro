@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/internal/util"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/internal/util"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 const metaPref = "config/"
@@ -52,15 +52,50 @@ func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 	}
 
 	if provSection, ok := cfg["provider"].(map[string]interface{}); ok {
-		for provID := range provSection {
-			if !existingMap[provID] {
-				_ = s.db.UpsertProvider(&models.Provider{
-					ID:     provID,
-					Name:   provID,
-					Source: "opencode",
-					Status: "active",
-				})
-				diff.AddedProviders = append(diff.AddedProviders, provID)
+		for provID, provVal := range provSection {
+			if provCfg, ok := provVal.(map[string]interface{}); ok {
+				if !existingMap[provID] {
+					_ = s.db.UpsertProvider(&models.Provider{
+						ID:     provID,
+						Name:   provID,
+						Source: "opencode",
+						Status: "active",
+					})
+					diff.AddedProviders = append(diff.AddedProviders, provID)
+				}
+				importModels := func(names []string) {
+					for _, name := range names {
+						modelID := provID + "/" + name
+						if err := s.db.UpsertModel(&models.Model{
+							ID:          modelID,
+							ProviderID:  provID,
+							DisplayName: name,
+							Source:      "opencode",
+							Status:      "untested",
+						}); err == nil {
+							diff.AddedModels = append(diff.AddedModels, modelID)
+						}
+						_ = s.db.UpsertModelProfile(&models.ModelProfile{
+							ModelID: modelID,
+						})
+					}
+				}
+				if whitelist, ok := provCfg["whitelist"].([]interface{}); ok {
+					var names []string
+					for _, w := range whitelist {
+						if name, ok := w.(string); ok {
+							names = append(names, name)
+						}
+					}
+					importModels(names)
+				}
+				if modelsSection, ok := provCfg["models"].(map[string]interface{}); ok {
+					var names []string
+					for modelName := range modelsSection {
+						names = append(names, modelName)
+					}
+					importModels(names)
+				}
 			}
 		}
 	}
@@ -200,9 +235,9 @@ func (s *Service) ExportToOpenCodeConfig(configPath string) error {
 
 	provSection := make(map[string]interface{})
 	for _, p := range providers {
-		models, _ := s.db.ListModelsByProvider(p.ID)
+		providerModels, _ := s.db.ListModelsByProvider(p.ID)
 		var whitelist []string
-		for _, m := range models {
+		for _, m := range providerModels {
 			if m.Status != "error" && m.DisplayName != "" {
 				whitelist = append(whitelist, m.DisplayName)
 			}

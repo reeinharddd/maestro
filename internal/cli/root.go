@@ -12,16 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharrrd/opencode-kit/internal/audit"
-	"github.com/reeinharrrd/opencode-kit/internal/compress"
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/internal/discover"
-	"github.com/reeinharrrd/opencode-kit/internal/generator"
-	"github.com/reeinharrrd/opencode-kit/internal/heal"
-	"github.com/reeinharrrd/opencode-kit/internal/profile"
-	"github.com/reeinharrrd/opencode-kit/internal/routing"
-	"github.com/reeinharrrd/opencode-kit/internal/sync"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/audit"
+	"github.com/reeinharddd/okit/internal/compress"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/internal/discover"
+	"github.com/reeinharddd/okit/internal/generator"
+	"github.com/reeinharddd/okit/internal/heal"
+	"github.com/reeinharddd/okit/internal/profile"
+	"github.com/reeinharddd/okit/internal/routing"
+	"github.com/reeinharddd/okit/internal/sync"
+	"github.com/reeinharddd/okit/pkg/models"
 	"github.com/spf13/cobra"
 )
 
@@ -147,7 +147,7 @@ func newGenerateCmd(dbPath *string) *cobra.Command {
 	}
 	cmd.AddCommand(&cobra.Command{
 		Use:   "config",
-		Short: "Generate opencode.jsonc",
+		Short: "Generate opencode config file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			d, err := openDB(dbPath)
 			if err != nil {
@@ -478,11 +478,11 @@ func newModelsCmd(dbPath *string) *cobra.Command {
 func newSyncCmd(dbPath *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sync",
-		Short: "Bidirectional sync between DB and opencode.jsonc",
-		Long: `Bidirectional sync: imports changes from opencode.jsonc into DB,
-then exports DB back to opencode.jsonc. Keeps both in sync.
+		Short: "Bidirectional sync between DB and config file",
+		Long: `Bidirectional sync: imports changes from opencode config into DB,
+then exports DB back to opencode config. Keeps both in sync.
 
-Use after manually editing opencode.jsonc, or after running
+Use after manually editing the config file, or after running
 discover/audit/heal to push results to the config file.`,
 	}
 	cmd.AddCommand(&cobra.Command{
@@ -498,19 +498,19 @@ discover/audit/heal to push results to the config file.`,
 			configPath := findConfigPath(d)
 			svc := sync.New(d)
 
-			fmt.Println("Syncing opencode.jsonc → DB...")
+			fmt.Printf("Syncing %s → DB...\n", opencodeConfigName())
 			inDiff, err := svc.ImportFromOpenCodeConfig(configPath)
 			if err != nil {
 				return fmt.Errorf("import: %w", err)
 			}
-			fmt.Printf("  New providers: %d, new agents: %d, new commands: %d\n",
-				len(inDiff.AddedProviders), len(inDiff.AddedAgents), len(inDiff.AddedCommands))
+			fmt.Printf("  New providers: %d, new models: %d, new agents: %d, new commands: %d\n",
+				len(inDiff.AddedProviders), len(inDiff.AddedModels), len(inDiff.AddedAgents), len(inDiff.AddedCommands))
 
-			fmt.Println("Syncing DB → opencode.jsonc...")
+			fmt.Printf("Syncing DB → %s...\n", opencodeConfigName())
 			if err := svc.ExportToOpenCodeConfig(configPath); err != nil {
 				return fmt.Errorf("export: %w", err)
 			}
-			fmt.Println("  opencode.jsonc updated.")
+			fmt.Printf("  %s updated.\n", opencodeConfigName())
 
 			fmt.Println("Sync complete.")
 			return nil
@@ -518,7 +518,7 @@ discover/audit/heal to push results to the config file.`,
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "import",
-		Short: "Import opencode.jsonc → DB only",
+		Short: "Import config file → DB only",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			d, err := openDB(dbPath)
 			if err != nil {
@@ -531,14 +531,14 @@ discover/audit/heal to push results to the config file.`,
 			if err != nil {
 				return fmt.Errorf("import: %w", err)
 			}
-			fmt.Printf("Import complete. New providers: %d, new agents: %d, new commands: %d\n",
-				len(diff.AddedProviders), len(diff.AddedAgents), len(diff.AddedCommands))
+			fmt.Printf("Import complete. New providers: %d, new models: %d, new agents: %d, new commands: %d\n",
+				len(diff.AddedProviders), len(diff.AddedModels), len(diff.AddedAgents), len(diff.AddedCommands))
 			return nil
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "export",
-		Short: "Export DB → opencode.jsonc only",
+		Short: "Export DB → config file only",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			d, err := openDB(dbPath)
 			if err != nil {
@@ -550,7 +550,7 @@ discover/audit/heal to push results to the config file.`,
 			if err := svc.ExportToOpenCodeConfig(configPath); err != nil {
 				return fmt.Errorf("export: %w", err)
 			}
-			fmt.Println("Export complete: opencode.jsonc updated.")
+			fmt.Printf("Export complete: %s updated.\n", opencodeConfigName())
 			return nil
 		},
 	})
@@ -560,7 +560,11 @@ discover/audit/heal to push results to the config file.`,
 func findConfigPath(d *db.DB) string {
 	configPath := OpenCodeConfigPath()
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		configPath = filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")
+		configName := "opencode.json"
+		if _, err := os.Stat(filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")); err == nil {
+			configName = "opencode.jsonc"
+		}
+		configPath = filepath.Join(filepath.Dir(d.DBPath()), configName)
 	}
 	return configPath
 }

@@ -32,9 +32,9 @@ fi
 # Build the Go binary or download pre-built
 if [ "$OS" = "Linux" ] || [ "$OS" = "Darwin" ]; then
 	if command -v go &> /dev/null; then
-		go build -o "$INSTALL_PATH/opencode-kit" github.com/reeinharrrd/opencode-kit/cmd/opencode-kit
+		go build -o "$INSTALL_PATH/opencode-kit" github.com/reeinharddd/okit/cmd/opencode-kit
 	else
-		curl -L https://github.com/reeinharrrd/opencode-kit/releases/latest/download/opencode-kit-$OS -o "$INSTALL_PATH/opencode-kit"
+		curl -L https://github.com/reeinharddd/okit/releases/latest/download/opencode-kit-$OS -o "$INSTALL_PATH/opencode-kit"
 		chmod +x "$INSTALL_PATH/opencode-kit"
 	fi
 else

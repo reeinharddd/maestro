@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/reeinharrrd/opencode-kit/internal/cli"
+	"github.com/reeinharddd/okit/internal/cli"
 )
 
 func main() {

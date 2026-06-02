@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
+	"github.com/reeinharddd/okit/internal/db"
 )
 
 type Service struct {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 const metaPrefix = "config/"
@@ -86,7 +86,11 @@ func (s *Service) GenerateConfig() error {
 		return fmt.Errorf("marshal: %w", err)
 	}
 
-	configPath := filepath.Join(s.outputDir, "opencode.jsonc")
+	configName := "opencode.jsonc"
+	if _, err := os.Stat(filepath.Join(s.outputDir, "opencode.json")); err == nil {
+		configName = "opencode.json"
+	}
+	configPath := filepath.Join(s.outputDir, configName)
 	if err := os.WriteFile(configPath, out, 0644); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
@@ -589,7 +593,11 @@ func (s *Service) GenerateCommands() error {
 }
 
 func (s *Service) readExistingConfig() map[string]interface{} {
-	path := filepath.Join(s.outputDir, "opencode.jsonc")
+	configName := "opencode.jsonc"
+	if _, err := os.Stat(filepath.Join(s.outputDir, "opencode.json")); err == nil {
+		configName = "opencode.json"
+	}
+	path := filepath.Join(s.outputDir, configName)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil

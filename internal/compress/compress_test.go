@@ -3,7 +3,7 @@ package compress
 import (
 	"testing"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
+	"github.com/reeinharddd/okit/internal/db"
 )
 
 func TestCompress_KeptSignals(t *testing.T) {

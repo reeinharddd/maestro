@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 type fakeDB struct {

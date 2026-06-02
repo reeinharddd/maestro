@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func (d *DB) UpsertProvider(p *models.Provider) error {

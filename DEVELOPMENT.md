@@ -253,7 +253,7 @@ package db_test
 
 import (
     "testing"
-    "github.com/reeinharrrd/opencode-kit/internal/db"
+    "github.com/reeinharddd/okit/internal/db"
 )
 
 func TestUpsertProvider(t *testing.T) {

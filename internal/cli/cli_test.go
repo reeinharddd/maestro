@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func TestMaskKey_ShortKey(t *testing.T) {

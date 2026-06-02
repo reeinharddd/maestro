@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/pkg/models"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 )

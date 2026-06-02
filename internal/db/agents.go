@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func (d *DB) UpsertAgent(a *models.Agent) error {

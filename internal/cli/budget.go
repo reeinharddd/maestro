@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func newBudgetCmd(dbPath *string) *cobra.Command {

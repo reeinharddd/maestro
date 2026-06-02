@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/reeinharrrd/opencode-kit/internal/util"
+	"github.com/reeinharddd/okit/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ func newMcpProfileCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mcp",
 		Short: "Manage MCP server profiles",
-		Long: `Manage MCP server profiles in opencode.jsonc.
+		Long: `Manage MCP server profiles in the opencode config file.
 Sets enabled/disabled flags on individual MCP servers.
 
 Profiles:

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/internal/compress"
+	"github.com/reeinharddd/okit/internal/compress"
 	"github.com/spf13/cobra"
 )
 

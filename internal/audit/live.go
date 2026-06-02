@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 type ProviderConfig struct {

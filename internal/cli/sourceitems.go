@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/internal/sources"
+	"github.com/reeinharddd/okit/internal/sources"
 	"github.com/spf13/cobra"
 )
 

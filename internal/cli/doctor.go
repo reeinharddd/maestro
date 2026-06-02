@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/internal/util"
+	"github.com/reeinharddd/okit/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -122,33 +122,53 @@ func checkConfig() error {
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("read opencode.jsonc: %w", err)
+		return fmt.Errorf("read %s: %w", opencodeConfigName(), err)
 	}
 
 	cleaned := util.StripJSONC(data)
 	var cfg map[string]interface{}
 	if err := json.Unmarshal(cleaned, &cfg); err != nil {
-		return fmt.Errorf("parse opencode.jsonc: %w", err)
+		return fmt.Errorf("parse %s: %w", opencodeConfigName(), err)
 	}
 
-	sections := []string{"provider", "agent", "command", "mcp", "permission", "experimental"}
+	required := []string{"provider", "agent", "mcp"}
+	optional := []string{"command", "permission", "experimental"}
 	missing := []string{}
 	present := 0
-	for _, s := range sections {
+	for _, s := range required {
 		if _, ok := cfg[s]; ok {
 			present++
 		} else {
 			missing = append(missing, s)
 		}
 	}
+	for _, s := range optional {
+		if _, ok := cfg[s]; ok {
+			present++
+		}
+	}
 	fmt.Printf("  File:  %s\n", configPath)
 	fmt.Printf("  Size:  %d bytes\n", len(data))
-	fmt.Printf("  Sections: %d/%d critical sections present\n", present, len(sections))
+	total := len(required) + len(optional)
+	fmt.Printf("  Sections: %d/%d present\n", present, total)
 	if len(missing) > 0 {
-		return fmt.Errorf("missing sections: %s", strings.Join(missing, ", "))
+		return fmt.Errorf("missing required sections: %s", strings.Join(missing, ", "))
+	}
+	if present < total {
+		fmt.Printf("  Note: optional sections missing: %s\n", strings.Join(missingOptional(cfg, optional), ", "))
 	}
 
 	return nil
+}
+
+func missingOptional(cfg map[string]interface{}, optional []string) []string {
+	var missing []string
+	for _, s := range optional {
+		if _, ok := cfg[s]; !ok {
+			missing = append(missing, s)
+		}
+	}
+	return missing
 }
 
 func checkDatabase(path string) error {

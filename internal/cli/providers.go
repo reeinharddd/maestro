@@ -6,16 +6,16 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/internal/generator"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/internal/generator"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func newProvidersCmdImpl(dbPath *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "providers",
-		Short: "Manage providers (DB + opencode.jsonc auto-sync)",
-		Long: `Manage providers. Every change automatically syncs to opencode.jsonc
+		Short: "Manage providers (DB auto-sync)",
+		Long: `Manage providers. Every change automatically syncs to opencode config
 so both DB and config stay in sync.
 
 Security: only the env var name is stored (e.g. MISTRAL_API_KEY),
@@ -67,7 +67,7 @@ func newProviderAddCmd(dbPath *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "add",
 		Short: "Add a custom provider",
-		Long: `Add a provider and auto-sync to opencode.jsonc.
+		Long: `Add a provider and auto-sync to opencode config.
 Security: store only the env var name, NOT the key value.
 
 Example:
@@ -124,7 +124,7 @@ func newProviderUpdateCmd(dbPath *string) *cobra.Command {
 		Use:   "update",
 		Short: "Update an existing provider",
 		Long: `Update provider fields. Only provided flags are changed.
-Auto-syncs to opencode.jsonc.
+Auto-syncs to opencode config.
 
 Example:
   okit providers update --id my-provider --api-base https://new-api.example.com`,
@@ -190,7 +190,7 @@ func newProviderRemoveCmd(dbPath *string) *cobra.Command {
 		Use:   "remove",
 		Short: "Remove a provider",
 		Long: `Remove a provider and its models from DB.
-Auto-syncs to opencode.jsonc.
+Auto-syncs to opencode config.
 
 Example:
   okit providers remove --id my-provider`,
@@ -223,8 +223,7 @@ func syncConfig(d *db.DB) error {
 	configDir := filepath.Dir(d.DBPath())
 	gen := generator.NewService(d, configDir)
 	if err := gen.GenerateConfig(); err != nil {
-		return fmt.Errorf("sync to opencode.jsonc: %w", err)
+		return fmt.Errorf("sync config: %w", err)
 	}
-	fmt.Println("  opencode.jsonc updated.")
 	return nil
 }

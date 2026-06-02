@@ -15,8 +15,16 @@ func OpenCodeConfigDir() string {
 	return filepath.Join(os.Getenv("HOME"), ".config", "opencode")
 }
 
+func opencodeConfigName() string {
+	dir := OpenCodeConfigDir()
+	if _, err := os.Stat(filepath.Join(dir, "opencode.json")); err == nil {
+		return "opencode.json"
+	}
+	return "opencode.jsonc"
+}
+
 func OpenCodeConfigPath() string {
-	return filepath.Join(OpenCodeConfigDir(), "opencode.jsonc")
+	return filepath.Join(OpenCodeConfigDir(), opencodeConfigName())
 }
 
 func OpenCodeEnvPath() string {

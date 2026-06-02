@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/reeinharrrd/opencode-kit/internal/db"
-	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/reeinharddd/okit/internal/db"
+	"github.com/reeinharddd/okit/pkg/models"
 )
 
 func TestImportFromOpenCodeConfig_WithAllSections(t *testing.T) {
@@ -97,9 +97,9 @@ func TestImportFromOpenCodeConfig_WithAllSections(t *testing.T) {
 	}
 
 	// Verify model usage
-	models, _ := d.ListModelsByProvider("groq")
-	if len(models) != 1 || models[0].DisplayName != "llama-3.3-70b-versatile" {
-		t.Errorf("model not imported: %v", models)
+	modelList, _ := d.ListModelsByProvider("groq")
+	if len(modelList) != 1 || modelList[0].DisplayName != "llama-3.3-70b-versatile" {
+		t.Errorf("model not imported: %v", modelList)
 	}
 
 	// Verify agent usage

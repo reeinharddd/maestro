@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/internal/generator"
-	"github.com/reeinharrrd/opencode-kit/internal/util"
+	"github.com/reeinharddd/okit/internal/generator"
+	"github.com/reeinharddd/okit/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -23,11 +23,17 @@ func newValidateCmd(dbPath *string) *cobra.Command {
 			}
 			defer d.Close()
 
-			gen := generator.NewService(d, filepath.Dir(d.DBPath()))
+			outputDir := filepath.Dir(d.DBPath())
+			gen := generator.NewService(d, outputDir)
 			if err := gen.GenerateConfig(); err != nil {
 				return fmt.Errorf("generate config: %w", err)
 			}
-			configPath := filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")
+
+			configName := "opencode.jsonc"
+			if _, err := os.Stat(filepath.Join(outputDir, "opencode.json")); err == nil {
+				configName = "opencode.json"
+			}
+			configPath := filepath.Join(outputDir, configName)
 			data, err := os.ReadFile(configPath)
 			if err != nil {
 				return fmt.Errorf("read generated config: %w", err)
@@ -39,11 +45,10 @@ func newValidateCmd(dbPath *string) *cobra.Command {
 				return fmt.Errorf("parse generated config: %w", err)
 			}
 
-			// Validate critical sections are present (same as doctor check)
-			sections := []string{"provider", "agent", "command", "mcp", "permission", "experimental"}
+			required := []string{"provider", "agent", "mcp"}
 			missing := []string{}
 			present := 0
-			for _, s := range sections {
+			for _, s := range required {
 				if _, ok := cfg[s]; ok {
 					present++
 				} else {
@@ -51,7 +56,7 @@ func newValidateCmd(dbPath *string) *cobra.Command {
 				}
 			}
 			if len(missing) > 0 {
-				return fmt.Errorf("generated config missing sections: %s", strings.Join(missing, ", "))
+				return fmt.Errorf("generated config missing required sections: %s", strings.Join(missing, ", "))
 			}
 
 			fmt.Printf("Validated config at %s\n", configPath)

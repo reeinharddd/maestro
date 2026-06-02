@@ -1,6 +1,6 @@
 package db
 
-import "github.com/reeinharrrd/opencode-kit/pkg/models"
+import "github.com/reeinharddd/okit/pkg/models"
 
 func (d *DB) UpsertCommand(c *models.Command) error {
 	_, err := d.Exec(`INSERT INTO commands (id, command_template, description, agent, model, subtask, source, status)

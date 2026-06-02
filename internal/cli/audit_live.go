@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/reeinharrrd/opencode-kit/internal/audit"
+	"github.com/reeinharddd/okit/internal/audit"
 	"github.com/spf13/cobra"
 )
 
