@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/reeinharddd/okit/internal/config"
 	_ "modernc.org/sqlite"
 )
 
@@ -26,14 +26,7 @@ type DB struct {
 var _ DBInterface = (*DB)(nil)
 
 func DefaultPath() string {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		configDir = filepath.Join(os.Getenv("HOME"), ".config")
-	}
-	base := filepath.Join(configDir, "opencode")
-	if runtime.GOOS == "windows" {
-		base = filepath.Join(configDir, "opencode")
-	}
+	base := config.ConfigDir()
 	os.MkdirAll(base, 0755)
 	return filepath.Join(base, "opencode-kit.db")
 }
