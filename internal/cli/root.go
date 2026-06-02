@@ -79,6 +79,7 @@ audits capabilities, generates optimal config, and auto-heals issues.
 	root.AddCommand(newSourceItemsCmd(&dbPath))
 	root.AddCommand(newExecLogCmd(&dbPath))
 	root.AddCommand(newModelProfilesCmd(&dbPath))
+	root.AddCommand(newAgentsCmd(&dbPath))
 
 	return root
 }
