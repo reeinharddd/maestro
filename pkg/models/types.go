@@ -109,6 +109,16 @@ type RoutingRule struct {
 	LastAssigned   int64  `json:"last_assigned,omitempty"`
 }
 
+type RoutingEvent struct {
+	ID            int64  `json:"id"`
+	TaskKey       string `json:"task_key"`
+	SelectedModel string `json:"selected_model,omitempty"`
+	Candidates    string `json:"candidates,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	Shadow        bool   `json:"shadow"`
+	CreatedAt     string `json:"created_at,omitempty"`
+}
+
 type ModelProfile struct {
 	ModelID       string  `json:"model_id"`
 	RealContext   int     `json:"real_context,omitempty"`
@@ -172,4 +182,14 @@ type SourceItem struct {
 	TargetPath string `json:"target_path,omitempty"`
 	Hash       string `json:"hash,omitempty"`
 	Status     string `json:"status"`
+}
+
+type ConfigFragment struct {
+	ID         string `json:"id"`
+	ConfigType string `json:"config_type"`
+	Content    string `json:"content"`
+	Source     string `json:"source,omitempty"`
+	Hash       string `json:"hash,omitempty"`
+	CreatedAt  string `json:"created_at,omitempty"`
+	UpdatedAt  string `json:"updated_at,omitempty"`
 }

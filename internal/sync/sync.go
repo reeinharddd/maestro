@@ -10,6 +10,8 @@ import (
 	"github.com/reeinharrrd/opencode-kit/pkg/models"
 )
 
+const metaPref = "config/"
+
 type Service struct {
 	db db.DBInterface
 }
@@ -102,6 +104,84 @@ func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 				})
 				diff.AddedCommands = append(diff.AddedCommands, cmdID)
 			}
+		}
+	}
+
+	if mcpSection, ok := cfg["mcp"].(map[string]interface{}); ok {
+		for id, val := range mcpSection {
+			entry, _ := val.(map[string]interface{})
+			m := models.MCPServer{ID: id, Source: "opencode"}
+			if t, _ := entry["type"].(string); t != "" {
+				m.Type = t
+			}
+			if cmd, _ := entry["command"].([]interface{}); len(cmd) > 0 {
+				b, _ := json.Marshal(cmd)
+				m.Command = string(b)
+			}
+			if u, _ := entry["url"].(string); u != "" {
+				m.URL = u
+			}
+			if en, _ := entry["enabled"].(bool); en {
+				m.Enabled = true
+			}
+			if env, _ := entry["environment"].(map[string]interface{}); len(env) > 0 {
+				b, _ := json.Marshal(env)
+				m.EnvVars = string(b)
+			}
+			if to, _ := entry["timeout"].(float64); to > 0 {
+				m.Timeout = int(to)
+			}
+			_ = s.db.UpsertMCP(&m)
+			diff.AddedMCPs = append(diff.AddedMCPs, id)
+		}
+	}
+
+	if lspBool, isBool := cfg["lsp"].(bool); isBool {
+		_ = s.db.SetPreference(metaPref+"lsp", fmt.Sprintf("%t", lspBool))
+	} else if lspObj, isObj := cfg["lsp"].(map[string]interface{}); isObj {
+		_ = s.db.SetPreference(metaPref+"lsp", "object")
+		for id, val := range lspObj {
+			entry, _ := val.(map[string]interface{})
+			l := models.LSPServer{ID: id}
+			if cmd, _ := entry["command"].([]interface{}); len(cmd) > 0 {
+				b, _ := json.Marshal(cmd)
+				l.Command = string(b)
+			}
+			if ext, _ := entry["extensions"].([]interface{}); len(ext) > 0 {
+				b, _ := json.Marshal(ext)
+				l.Extensions = string(b)
+			}
+			if env, _ := entry["env"].(map[string]interface{}); len(env) > 0 {
+				b, _ := json.Marshal(env)
+				l.Env = string(b)
+			}
+			if init, _ := entry["initialization"].(string); init != "" {
+				l.Initialization = init
+			}
+			if dis, _ := entry["disabled"].(bool); dis {
+				l.Disabled = true
+			}
+			_ = s.db.UpsertLSPServer(&l)
+		}
+	}
+
+	setJSONPref := func(key string, val interface{}) {
+		b, _ := json.Marshal(val)
+		_ = s.db.SetPreference(key, string(b))
+	}
+	for _, key := range []string{"autoupdate", "disabled_providers", "model", "small_model", "share", "plugin"} {
+		if v, exists := cfg[key]; exists {
+			setJSONPref(metaPref+key, v)
+		}
+	}
+	if skills, ok := cfg["skills"].(map[string]interface{}); ok {
+		for sk, sv := range skills {
+			setJSONPref(metaPref+"skills_"+sk, sv)
+		}
+	}
+	if comp, ok := cfg["compaction"].(map[string]interface{}); ok {
+		for ck, cv := range comp {
+			setJSONPref(metaPref+"compaction_"+ck, cv)
 		}
 	}
 

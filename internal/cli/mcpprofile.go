@@ -78,7 +78,23 @@ Profiles:
 		},
 	}
 
-	cmd.AddCommand(setCmd, enableCmd, disableCmd, statusCmd)
+	reportCmd := &cobra.Command{
+		Use:   "report",
+		Short: "Show MCP profile/import report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := readConfigJSON()
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Config keys: %d\n", len(cfg))
+			if mcps, ok := cfg["mcp"].(map[string]interface{}); ok {
+				fmt.Printf("MCP servers: %d\n", len(mcps))
+			}
+			return nil
+		},
+	}
+
+	cmd.AddCommand(setCmd, enableCmd, disableCmd, statusCmd, reportCmd)
 	return cmd
 }
 
@@ -225,52 +241,6 @@ func showMCPStatus() error {
 		}
 	}
 	return nil
-}
-
-func stripJSONC(data []byte) []byte {
-	var out []byte
-	inStr := false
-	esc := false
-	for i := 0; i < len(data); i++ {
-		b := data[i]
-		if esc {
-			out = append(out, b)
-			esc = false
-			continue
-		}
-		if inStr {
-			out = append(out, b)
-			if b == '"' {
-				inStr = false
-			} else if b == '\\' {
-				esc = true
-			}
-			continue
-		}
-		if b == '"' {
-			out = append(out, b)
-			inStr = true
-			continue
-		}
-		if b == '/' && i+1 < len(data) {
-			if data[i+1] == '/' {
-				for i < len(data) && data[i] != '\n' {
-					i++
-				}
-				continue
-			}
-			if data[i+1] == '*' {
-				i += 2
-				for i+1 < len(data) && !(data[i] == '*' && data[i+1] == '/') {
-					i++
-				}
-				i++
-				continue
-			}
-		}
-		out = append(out, b)
-	}
-	return out
 }
 
 func joinStrings(items []string, sep string) string {

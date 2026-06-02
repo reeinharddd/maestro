@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/reeinharrrd/opencode-kit/internal/audit"
+	"github.com/reeinharrrd/opencode-kit/internal/compress"
 	"github.com/reeinharrrd/opencode-kit/internal/db"
 	"github.com/reeinharrrd/opencode-kit/internal/discover"
 	"github.com/reeinharrrd/opencode-kit/internal/generator"
@@ -21,6 +21,8 @@ import (
 	"github.com/reeinharrrd/opencode-kit/internal/profile"
 	"github.com/reeinharrrd/opencode-kit/internal/routing"
 	"github.com/reeinharrrd/opencode-kit/internal/sync"
+	"github.com/reeinharrrd/opencode-kit/pkg/models"
+	"github.com/spf13/cobra"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -134,6 +136,7 @@ func newAuditCmd(dbPath *string) *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("full", false, "Test all models (default: only new + errored)")
+	cmd.AddCommand(newAuditLiveCmd(dbPath))
 	return cmd
 }
 
@@ -207,7 +210,7 @@ func newDailyCmd(dbPath *string) *cobra.Command {
 			fmt.Println("=== Daily Pipeline ===")
 
 			// 1. Backup
-			fmt.Println("[1/6] Backup...")
+			fmt.Println("[1/9] Backup...")
 			backupDir := filepath.Join(filepath.Dir(d.DBPath()), "backups")
 			os.MkdirAll(backupDir, 0755)
 			backupPath := filepath.Join(backupDir, fmt.Sprintf("opencode-kit-%s.tar.gz", time.Now().UTC().Format("2006-01-02T15-04-05")))
@@ -219,28 +222,47 @@ func newDailyCmd(dbPath *string) *cobra.Command {
 			}
 
 			// 2. Discover
-			fmt.Println("[2/6] Discovering models...")
+			fmt.Println("[2/9] Discovering models...")
 			dis := discover.NewService(discover.NewServiceParams{DB: d})
 			if err := dis.Discover(cmd.Context()); err != nil {
 				fmt.Printf("  Warning: discover: %v\n", err)
 			}
 
+			// 2b. Live audit + fix drift (real /v1/models vs DB)
+			fmt.Println("[2b/9] Live audit (real catalog vs DB) + auto-fix drift...")
+			live := audit.NewLive(d, 4)
+			fixes, err := live.FixAll(cmd.Context())
+			if err != nil {
+				fmt.Printf("  Warning: live fix: %v\n", err)
+			} else {
+				ph, ms, sk := 0, 0, 0
+				for _, f := range fixes {
+					if f.FetchError == "" {
+						ph += f.PhantomFixed
+						ms += f.MissingAdded
+						sk += f.Skipped
+					}
+				}
+				fmt.Printf("  Drift fixed: %d phantoms -> error, %d new untested, %d non-chat skipped\n",
+					ph, ms, sk)
+			}
+
 			// 3. Audit
-			fmt.Println("[3/6] Auditing models...")
+			fmt.Println("[3/9] Auditing models...")
 			aud := audit.New(d, 5)
 			if err := aud.Run(cmd.Context(), full); err != nil {
 				fmt.Printf("  Warning: audit: %v\n", err)
 			}
 
 			// 4. Generate
-			fmt.Println("[4/6] Generating configuration...")
+			fmt.Println("[4/9] Generating configuration...")
 			gen := generator.NewService(d, "")
 			if err := gen.GenerateConfig(); err != nil {
 				fmt.Printf("  Warning: generate config: %v\n", err)
 			}
 
 			// 5. Stats
-			fmt.Println("[5/8] Collecting stats...")
+			fmt.Println("[5/9] Collecting stats...")
 			stats, err := d.GetStats()
 			if err == nil {
 				fmt.Printf("  Active models: %d\n", stats["active"])
@@ -249,24 +271,39 @@ func newDailyCmd(dbPath *string) *cobra.Command {
 				fmt.Printf("  Providers:     %d\n", stats["providers_active"])
 			}
 
-			fmt.Println("[6/8] Profiling models...")
+			fmt.Println("[6/9] Profiling models...")
 			prof := profile.New(d)
 			if err := prof.ProfileAll(cmd.Context(), false); err != nil {
 				fmt.Printf("  Warning: profile: %v\n", err)
 			}
 
-			fmt.Println("[7/8] Reassigning routing...")
+			fmt.Println("[7/9] Reassigning routing...")
 			router := routing.New(d)
-			if err := router.ReassignAll(cmd.Context()); err != nil {
+			if err := router.ReassignAll(cmd.Context(), false); err != nil {
 				fmt.Printf("  Warning: route: %v\n", err)
 			}
 
-			fmt.Println("[8/8] Running auto-healing...")
+			fmt.Println("[8/9] Running auto-healing...")
 			healer := heal.New(d)
 			if report, err := healer.Run(cmd.Context()); err != nil {
 				fmt.Printf("  Warning: heal: %v\n", err)
 			} else if report.IssuesFound > 0 {
 				fmt.Printf("  Healing: %d issues found, %d fixed\n", report.IssuesFound, report.IssuesFixed)
+			}
+
+			fmt.Println("[9/9] Compressing session observations...")
+			fragments, _ := d.ListConfigFragments(50)
+			obs := make([]compress.Observation, 0, len(fragments))
+			step := 1
+			for _, f := range fragments {
+				obs = append(obs, compress.Observation{
+					Source: f.Source, Step: step, Message: f.Content, Important: true,
+				})
+				step++
+			}
+			c := compress.NewWithDB(d, 12)
+			if out := c.Compress(obs); out != "" {
+				fmt.Printf("  Compressed: %d observation(s) -> fragment\n", len(obs))
 			}
 
 			fmt.Println("Daily pipeline complete.")
@@ -523,7 +560,7 @@ discover/audit/heal to push results to the config file.`,
 func findConfigPath(d *db.DB) string {
 	configPath := OpenCodeConfigPath()
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			configPath = filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")
+		configPath = filepath.Join(filepath.Dir(d.DBPath()), "opencode.jsonc")
 	}
 	return configPath
 }
@@ -584,6 +621,7 @@ func newRouteCmd(dbPath *string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			task, _ := cmd.Flags().GetString("task")
 			reassign, _ := cmd.Flags().GetBool("reassign")
+			shadow, _ := cmd.Flags().GetBool("shadow")
 			d, err := openDB(dbPath)
 			if err != nil {
 				return err
@@ -591,11 +629,14 @@ func newRouteCmd(dbPath *string) *cobra.Command {
 			defer d.Close()
 			r := routing.New(d)
 			if reassign {
-				return r.ReassignAll(cmd.Context())
+				return r.ReassignAll(cmd.Context(), shadow)
 			}
 			if task != "" {
 				budget, _ := d.GetBudget()
-				rule, err := r.SelectBestModel(task, *budget)
+				if budget == nil {
+					budget = &models.BudgetConfig{ID: "default"}
+				}
+				rule, err := r.SelectBestModel(task, *budget, shadow)
 				if err != nil {
 					return err
 				}
@@ -618,8 +659,46 @@ func newRouteCmd(dbPath *string) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.AddCommand(newRouteReportCmd(dbPath))
 	cmd.Flags().String("task", "", "Task type (coding_complex, coding_fast, reasoning, vision, long_context, fastest)")
 	cmd.Flags().Bool("reassign", false, "Reassign all routing rules")
+	cmd.Flags().Bool("shadow", false, "Log routing decisions without writing to DB")
+	return cmd
+}
+
+func newRouteReportCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "report",
+		Short: "Show recent routing decisions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			limit, _ := cmd.Flags().GetInt("limit")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			events, err := d.ListRoutingEvents(limit)
+			if err != nil {
+				return err
+			}
+			if len(events) == 0 {
+				fmt.Println("No routing events found")
+				return nil
+			}
+			fmt.Printf("%-4s %-14s %-24s %-7s %s\n", "ID", "Task", "Model", "Shadow", "Reason")
+			fmt.Println(strings.Repeat("-", 80))
+			for _, e := range events {
+				shadow := "no"
+				if e.Shadow {
+					shadow = "yes"
+				}
+				fmt.Printf("%-4d %-14s %-24s %-7s %s | %s\n", e.ID, e.TaskKey, e.SelectedModel, shadow, e.Reason, routing.FormatCandidateSummary(e.Candidates))
+			}
+			return nil
+		},
+	}
+	cmd.Flags().Int("limit", 20, "Number of routing events to show")
 	return cmd
 }
 

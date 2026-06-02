@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS preferences;
 DROP TABLE IF EXISTS snapshots;
 DROP TABLE IF EXISTS exec_log;
 DROP TABLE IF EXISTS sync_log;
+DROP TABLE IF EXISTS routing_events;
 DROP TABLE IF EXISTS config_fragments;
 DROP TABLE IF EXISTS budget_config;
 DROP TABLE IF EXISTS lsp_servers;

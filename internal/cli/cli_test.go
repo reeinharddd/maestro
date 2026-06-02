@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/reeinharrrd/opencode-kit/internal/db"
+	"github.com/reeinharrrd/opencode-kit/pkg/models"
 )
 
 func TestMaskKey_ShortKey(t *testing.T) {
@@ -125,11 +128,14 @@ func TestFindConfigPath_PrefersConfigDir(t *testing.T) {
 	dbPath := filepath.Join(dir, "data", "okit.db")
 	os.MkdirAll(filepath.Dir(dbPath), 0755)
 
-	configDir := "/home/reeinharrrd/.config/opencode"
+	configDir := filepath.Join(dir, "config", "opencode")
 	jsoncPath := filepath.Join(configDir, "opencode.jsonc")
 	os.MkdirAll(configDir, 0755)
 	os.WriteFile(jsoncPath, []byte("{}"), 0644)
 	defer os.Remove(jsoncPath)
+	old := os.Getenv("OPENCODE_CONFIG_DIR")
+	os.Setenv("OPENCODE_CONFIG_DIR", configDir)
+	t.Cleanup(func() { os.Setenv("OPENCODE_CONFIG_DIR", old) })
 
 	d, err := openDB(&dbPath)
 	if err != nil {
@@ -148,6 +154,17 @@ func TestFindConfigPath_FallbackToDBDir(t *testing.T) {
 	dbPath := filepath.Join(dir, "okit.db")
 	jsoncPath := filepath.Join(dir, "opencode.jsonc")
 	os.WriteFile(jsoncPath, []byte("{}"), 0644)
+
+	// Set the environment variable so that the default config path is in the temp dir
+	old := os.Getenv("OPENCODE_CONFIG_DIR")
+	os.Setenv("OPENCODE_CONFIG_DIR", dir)
+	t.Cleanup(func() {
+		if old == "" {
+			os.Unsetenv("OPENCODE_CONFIG_DIR")
+		} else {
+			os.Setenv("OPENCODE_CONFIG_DIR", old)
+		}
+	})
 
 	d, err := openDB(&dbPath)
 	if err != nil {
@@ -169,5 +186,42 @@ func TestCheckFileExists_Found(t *testing.T) {
 	got := checkFileExists(path)
 	if got == "(not found)" {
 		t.Errorf("checkFileExists found file, got %q", got)
+	}
+}
+
+func TestValidateGeneratesConfig(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "okit.db")
+	d, err := db.Open(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.UpsertProvider(&models.Provider{ID: "p", Name: "P", Source: "custom", Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.UpsertModel(&models.Model{ID: "m", ProviderID: "p", DisplayName: "Model", Status: "active", Source: "discovered"}); err != nil {
+		t.Fatal(err)
+	}
+	// Seed agent, command, mcp for generator to pick up
+	if err := d.UpsertAgent(&models.Agent{ID: "test-agent", Description: "Test Agent", Mode: "auto", Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.UpsertCommand(&models.Command{ID: "test-command", Template: "# test", Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.UpsertMCP(&models.MCPServer{ID: "test-mcp", Type: "local"}); err != nil {
+		t.Fatal(err)
+	}
+	// For permission section, we need at least one agent with permission set
+	if err := d.UpsertAgent(&models.Agent{ID: "test-agent-with-perm", Description: "Test Agent With Perm", Mode: "auto", Permission: `{"allow": []}`, Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
+// Experimental section gets populated when there are any agents with experimental models
+// For now we'll skip seeding it as it's harder to trigger deterministically in test
+	d.Close()
+
+	cmd := newValidateCmd(&dbPath)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatal(err)
 	}
 }

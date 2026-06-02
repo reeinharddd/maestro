@@ -247,8 +247,19 @@ CREATE TABLE IF NOT EXISTS routing_rules (
     last_assigned INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS routing_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_key TEXT NOT NULL DEFAULT '',
+    selected_model TEXT NOT NULL DEFAULT '',
+    candidates TEXT NOT NULL DEFAULT '[]',
+    reason TEXT NOT NULL DEFAULT '',
+    shadow INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_models_provider ON models(provider_id);
 CREATE INDEX IF NOT EXISTS idx_exec_log_executed ON exec_log(created_at);
 CREATE INDEX IF NOT EXISTS idx_sync_log_created ON sync_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_routing_events_created ON routing_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_source_items_source ON source_items(source_id);
 CREATE INDEX IF NOT EXISTS idx_heal_actions_status ON heal_actions(status);

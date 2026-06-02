@@ -78,6 +78,8 @@ type DBInterface interface {
 	UpsertRoutingRule(r *models.RoutingRule) error
 	ListRoutingRules() ([]models.RoutingRule, error)
 	GetRoutingRule(key string) (*models.RoutingRule, error)
+	InsertRoutingEvent(event *models.RoutingEvent) error
+	ListRoutingEvents(limit int) ([]models.RoutingEvent, error)
 
 	// Sync Log
 	InsertSyncLog(phase, status, details string, durationMs int64) error
@@ -98,4 +100,9 @@ type DBInterface interface {
 	GetPreference(key string) (string, error)
 	ListPreferences() (map[string]string, error)
 	DeletePreference(key string) error
+
+	// Config Fragments
+	UpsertConfigFragment(fragment *models.ConfigFragment) error
+	ListConfigFragments(limit int) ([]models.ConfigFragment, error)
+	GetConfigFragment(id string) (*models.ConfigFragment, error)
 }

@@ -111,6 +111,21 @@ func TestDeleteProvider(t *testing.T) {
 	}
 }
 
+func TestUpsertConfigFragment(t *testing.T) {
+	d := openTestDB(t)
+	f := &models.ConfigFragment{ID: "frag1", ConfigType: "session", Content: "hello", Source: "compress", Hash: "abc"}
+	if err := d.UpsertConfigFragment(f); err != nil {
+		t.Fatalf("upsert fragment: %v", err)
+	}
+	got, err := d.GetConfigFragment("frag1")
+	if err != nil {
+		t.Fatalf("get fragment: %v", err)
+	}
+	if got.Content != "hello" {
+		t.Fatalf("got %q", got.Content)
+	}
+}
+
 func TestDeleteProvider_CascadeDeletesModels(t *testing.T) {
 	d := openTestDB(t)
 	p := &models.Provider{ID: "cascade-provider", Name: "Cascade Test", Source: "custom", Status: "active"}

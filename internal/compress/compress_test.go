@@ -1,6 +1,10 @@
 package compress
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/reeinharrrd/opencode-kit/internal/db"
+)
 
 func TestCompress_KeptSignals(t *testing.T) {
 	c := New(10)
@@ -40,6 +44,26 @@ func TestPruneOutput_KeptSignals(t *testing.T) {
 	lines := splitLines(out)
 	if len(lines) != 2 {
 		t.Fatalf("got %d lines, want 2", len(lines))
+	}
+}
+
+func TestCompress_PersistsFragmentWhenDBPresent(t *testing.T) {
+	d, err := db.Open(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { d.Close() })
+	c := NewWithDB(d, 4)
+	out := c.Compress([]Observation{{Source: "cli", Step: 1, Message: "warn one"}})
+	if out == "" {
+		t.Fatal("expected output")
+	}
+	frags, err := d.ListConfigFragments(10)
+	if err != nil {
+		t.Fatalf("list config fragments: %v", err)
+	}
+	if len(frags) == 0 {
+		t.Fatal("expected persisted config fragment")
 	}
 }
 

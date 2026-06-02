@@ -96,6 +96,8 @@ func (s *Service) Discover(ctx context.Context) error {
 			}
 			providerID := kp.ID
 			fullID := providerID + "/" + m.ID
+			existing, _ := s.db.ListModelsByProvider(providerID)
+			_ = existing
 			_ = s.db.UpsertModel(&models.Model{
 				ID:          fullID,
 				ProviderID:  providerID,
@@ -169,11 +171,7 @@ func fetchCatalog(ctx context.Context, providerID, catalogURL, apiKey string) ([
 			return nil, err
 		}
 		for _, m := range result.Data {
-			short := m.ID
-			if idx := strings.LastIndex(m.ID, "/"); idx >= 0 {
-				short = m.ID[idx+1:]
-			}
-			entries = append(entries, ModelEntry{ID: short, Provider: providerID})
+			entries = append(entries, ModelEntry{ID: m.ID, Provider: providerID})
 		}
 	}
 

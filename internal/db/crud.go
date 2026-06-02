@@ -3,10 +3,10 @@ package db
 import "github.com/reeinharrrd/opencode-kit/pkg/models"
 
 func (d *DB) UpsertCommand(c *models.Command) error {
-	_, err := d.Exec(`INSERT INTO commands (id, template, description, agent, model, subtask, source, status)
+	_, err := d.Exec(`INSERT INTO commands (id, command_template, description, agent, model, subtask, source, status)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
-		template=excluded.template, description=excluded.description,
+		command_template=excluded.command_template, description=excluded.description,
 		agent=excluded.agent, model=excluded.model, subtask=excluded.subtask,
 		source=excluded.source, status=excluded.status`,
 		c.ID, c.Template, c.Description, c.Agent, c.Model, boolToInt(c.Subtask), c.Source, c.Status)
@@ -14,7 +14,7 @@ func (d *DB) UpsertCommand(c *models.Command) error {
 }
 
 func (d *DB) ListCommands() ([]models.Command, error) {
-	rows, err := d.Query(`SELECT id, COALESCE(template,''), COALESCE(description,''), COALESCE(agent,''), COALESCE(model,''), COALESCE(subtask,0), COALESCE(source,''), COALESCE(status,'active') FROM commands ORDER BY id`)
+	rows, err := d.Query(`SELECT id, COALESCE(command_template,''), COALESCE(description,''), COALESCE(agent,''), COALESCE(model,''), COALESCE(subtask,0), COALESCE(source,''), COALESCE(status,'active') FROM commands ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +142,46 @@ func (d *DB) UpsertLSPServer(l *models.LSPServer) error {
 		disabled=excluded.disabled`,
 		l.ID, l.Command, l.Extensions, l.Env, l.Initialization, boolToInt(l.Disabled))
 	return err
+}
+
+func (d *DB) UpsertConfigFragment(f *models.ConfigFragment) error {
+	_, err := d.Exec(`INSERT INTO config_fragments (id, config_type, content, source, hash, updated_at)
+		VALUES (?, ?, ?, ?, ?, datetime('now'))
+		ON CONFLICT(id) DO UPDATE SET
+		config_type=excluded.config_type, content=excluded.content,
+		source=excluded.source, hash=excluded.hash, updated_at=datetime('now')`,
+		f.ID, f.ConfigType, f.Content, f.Source, f.Hash)
+	return err
+}
+
+func (d *DB) ListConfigFragments(limit int) ([]models.ConfigFragment, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := d.Query(`SELECT id, COALESCE(config_type,''), COALESCE(content,''), COALESCE(source,''), COALESCE(hash,''), COALESCE(created_at,''), COALESCE(updated_at,'') FROM config_fragments ORDER BY updated_at DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.ConfigFragment
+	for rows.Next() {
+		var f models.ConfigFragment
+		if err := rows.Scan(&f.ID, &f.ConfigType, &f.Content, &f.Source, &f.Hash, &f.CreatedAt, &f.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, nil
+}
+
+func (d *DB) GetConfigFragment(id string) (*models.ConfigFragment, error) {
+	var f models.ConfigFragment
+	err := d.QueryRow(`SELECT id, COALESCE(config_type,''), COALESCE(content,''), COALESCE(source,''), COALESCE(hash,''), COALESCE(created_at,''), COALESCE(updated_at,'') FROM config_fragments WHERE id=?`, id).
+		Scan(&f.ID, &f.ConfigType, &f.Content, &f.Source, &f.Hash, &f.CreatedAt, &f.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
 }
 
 func (d *DB) ListLSPServers() ([]models.LSPServer, error) {

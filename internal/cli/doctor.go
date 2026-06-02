@@ -49,6 +49,7 @@ func newDoctorCmd() *cobra.Command {
 		dbPath := OpenCodeDBPath()
 		if err := checkDatabase(dbPath); err != nil {
 			fmt.Printf("  FAIL: %v\n", err)
+			fail++
 		}
 		fmt.Println()
 
@@ -83,6 +84,7 @@ func newDoctorCmd() *cobra.Command {
 					fmt.Println("  OK: all keys present")
 				} else {
 					fmt.Printf("  %d key(s) missing\n", missing)
+					fail += missing
 				}
 			}
 			fmt.Println()
@@ -143,7 +145,7 @@ func checkConfig() error {
 	fmt.Printf("  Size:  %d bytes\n", len(data))
 	fmt.Printf("  Sections: %d/%d critical sections present\n", present, len(sections))
 	if len(missing) > 0 {
-		fmt.Printf("  Missing: %s\n", strings.Join(missing, ", "))
+		return fmt.Errorf("missing sections: %s", strings.Join(missing, ", "))
 	}
 
 	return nil
@@ -152,8 +154,7 @@ func checkConfig() error {
 func checkDatabase(path string) error {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		fmt.Println("  WARN: opencode-kit.db not found (run 'okit daily' to initialize)")
-		return nil
+		return fmt.Errorf("opencode-kit.db not found (run 'okit daily' to initialize)")
 	}
 	if err != nil {
 		return fmt.Errorf("stat db: %w", err)

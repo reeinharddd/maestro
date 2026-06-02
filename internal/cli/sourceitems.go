@@ -55,5 +55,28 @@ func newSourceItemsCmd(dbPath *string) *cobra.Command {
 			return nil
 		},
 	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "report",
+		Short: "Show imported source items",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+			items, err := d.ListSourceItems()
+			if err != nil {
+				return err
+			}
+			if len(items) == 0 {
+				fmt.Printf("Source items: 0\n")
+				return nil
+			}
+			for _, item := range items {
+				fmt.Printf("%s | %s | %s | %s\n", item.ID, item.SourceID, item.Type, item.Status)
+			}
+			return nil
+		},
+	})
 	return cmd
 }

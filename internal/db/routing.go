@@ -50,6 +50,34 @@ func (d *DB) GetRoutingRule(key string) (*models.RoutingRule, error) {
 	return &r, nil
 }
 
+func (d *DB) InsertRoutingEvent(event *models.RoutingEvent) error {
+	_, err := d.Exec(`INSERT INTO routing_events (task_key, selected_model, candidates, reason, shadow) VALUES (?, ?, ?, ?, ?)`,
+		event.TaskKey, event.SelectedModel, event.Candidates, event.Reason, boolToInt(event.Shadow))
+	return err
+}
+
+func (d *DB) ListRoutingEvents(limit int) ([]models.RoutingEvent, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := d.Query(`SELECT id, COALESCE(task_key,''), COALESCE(selected_model,''), COALESCE(candidates,''), COALESCE(reason,''), COALESCE(shadow,0), COALESCE(created_at,'') FROM routing_events ORDER BY id DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.RoutingEvent
+	for rows.Next() {
+		var e models.RoutingEvent
+		var shadow int
+		if err := rows.Scan(&e.ID, &e.TaskKey, &e.SelectedModel, &e.Candidates, &e.Reason, &shadow, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		e.Shadow = shadow != 0
+		out = append(out, e)
+	}
+	return out, nil
+}
+
 func (d *DB) UpsertBudget(b *models.BudgetConfig) error {
 	_, err := d.Exec(`INSERT INTO budget_config (id, daily_global_usd, preferred_tier, updated_at) VALUES (?, ?, ?, datetime('now'))
 		ON CONFLICT(id) DO UPDATE SET daily_global_usd=excluded.daily_global_usd, preferred_tier=excluded.preferred_tier, updated_at=datetime('now')`,
