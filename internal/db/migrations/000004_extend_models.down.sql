@@ -1,0 +1,15 @@
+ALTER TABLE models DROP COLUMN reasoning;
+ALTER TABLE models DROP COLUMN audio;
+ALTER TABLE models DROP COLUMN ocr;
+ALTER TABLE models DROP COLUMN aliases;
+ALTER TABLE models DROP COLUMN default_temperature;
+ALTER TABLE models DROP COLUMN deprecation;
+ALTER TABLE models DROP COLUMN max_output;
+ALTER TABLE models DROP COLUMN family;
+ALTER TABLE models DROP COLUMN release_date;
+ALTER TABLE models DROP COLUMN experimental;
+ALTER TABLE models DROP COLUMN modalities_input;
+ALTER TABLE models DROP COLUMN modalities_output;
+ALTER TABLE models DROP COLUMN pricing_cache_write;
+ALTER TABLE models DROP COLUMN input_cost;
+ALTER TABLE models DROP COLUMN output_cost;
