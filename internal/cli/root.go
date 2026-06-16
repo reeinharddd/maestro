@@ -402,6 +402,9 @@ func newQueryCmd(dbPath *string) *cobra.Command {
 			defer d.Close()
 
 			query := strings.Join(args, " ")
+			if strings.TrimSpace(query) == "" {
+				return fmt.Errorf("query must not be empty")
+			}
 			rows, err := d.Query(query)
 			if err != nil {
 				return fmt.Errorf("query: %w", err)
