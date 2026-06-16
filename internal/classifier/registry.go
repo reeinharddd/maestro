@@ -55,4 +55,3 @@ func (r *providerRegistry) Provider(id string) (Provider, bool) {
 
 // DefaultProviders will be re-implemented when the adapter between
 // db models and classifier models is needed. Currently deferred.
-// TODO: implement DefaultProviders with Model type conversion

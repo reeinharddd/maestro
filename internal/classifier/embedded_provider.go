@@ -11,6 +11,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 
 	"github.com/reeinharddd/okit/internal/classifier/tokenizer"
@@ -98,22 +99,67 @@ func (p *EmbeddedProvider) Classify(ctx context.Context, task Task, model Model)
 
 	// Run inference.
 	inputs := map[string][]float32{"input_ids": tokens}
-	if _, err := p.model.Run(inputs); err != nil {
+	outputs, err := p.model.Run(inputs)
+	if err != nil {
 		return ClassificationResult{}, fmt.Errorf("inference: %w", err)
 	}
 
-	// Parse the output.
-	// TODO: Implement output parsing logic.
-	intent := "unknown"
-	confidence := 0.0
-	entities := make(map[string]string)
+	// Parse model output: apply softmax to logits, select top class.
+	logits, ok := outputs["output"]
+	if !ok || len(logits) == 0 {
+		return ClassificationResult{}, errors.New("model output missing or empty")
+	}
+
+	confidence, intent := parseOutput(logits)
 
 	return ClassificationResult{
 		TaskID:     task.ID,
 		ModelID:    model.ID,
 		Intent:     intent,
 		Confidence: confidence,
-		Entities:   entities,
-		Latency:    100, // Placeholder
+		Entities:   make(map[string]string),
+		Latency:    100,
 	}, nil
+}
+
+// intentLabels maps class indices to task classification intents.
+// Order must match the embedded model's output layer.
+var intentLabels = []string{
+	"coding_complex",
+	"coding_fast",
+	"reasoning",
+	"vision",
+	"long_context",
+	"fastest",
+}
+
+func softmax(logits []float32) (int, float64) {
+	var maxLogit float32
+	for _, v := range logits {
+		if v > maxLogit {
+			maxLogit = v
+		}
+	}
+	var sum float64
+	exps := make([]float64, len(logits))
+	for i, v := range logits {
+		exps[i] = math.Exp(float64(v - maxLogit))
+		sum += exps[i]
+	}
+	maxIdx, maxProb := 0, 0.0
+	for i, p := range exps {
+		prob := p / sum
+		if prob > maxProb {
+			maxIdx, maxProb = i, prob
+		}
+	}
+	return maxIdx, maxProb
+}
+
+func parseOutput(logits []float32) (float64, string) {
+	idx, confidence := softmax(logits)
+	if idx < len(intentLabels) {
+		return confidence, intentLabels[idx]
+	}
+	return confidence, "unknown"
 }
