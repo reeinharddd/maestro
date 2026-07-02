@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/classifier"
 )
 
 type Service struct {
@@ -230,6 +231,16 @@ func (s *Service) Discover(ctx context.Context) error {
 				PricingCacheRead:  cacheReadCost,
 				PricingCacheWrite: cacheWriteCost,
 				Source:            "discovered",
+			}
+
+			// Classify model to populate Architecture, Tier, and RecommendedUse.
+			cls := classifier.NewService(s.db)
+			if result, err := cls.Classify(model); err == nil {
+				model.Architecture = result.Architecture
+				model.RecommendedUse = result.RecommendedUse
+				if result.Tier != "" && result.Tier != "unknown" {
+					model.Tier = result.Tier
+				}
 			}
 			_ = s.db.UpsertModel(model)
 			count++

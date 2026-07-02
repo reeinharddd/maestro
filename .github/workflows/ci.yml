@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GO_VERSION: "1.25"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - run: go build ./...
+      - run: make build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: okit-linux-amd64
+          path: okit
+          retention-days: 5
+
+  vet:
+    name: Vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - run: go vet ./...
+
+  test-race:
+    name: Test (race)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Coverage report
+        run: go tool cover -func=coverage.out
+
+      - name: Coverage summary
+        run: |
+          total=$(go tool cover -func=coverage.out | grep 'total:' | awk '{print $3}')
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Total coverage | $total |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Coverage thresholds are progressive targets, not blockers." >> $GITHUB_STEP_SUMMARY
+          echo "> See [docs/ci-cd.md](./docs/ci-cd.md) for details." >> $GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+          retention-days: 5

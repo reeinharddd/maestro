@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/reeinharddd/okit/internal/util"
+	"github.com/reeinharrrd/maestro/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -96,9 +96,9 @@ func newDoctorCmd() *cobra.Command {
 }
 
 func checkBinary() error {
-	path, err := exec.LookPath("okit")
+	path, err := exec.LookPath("maestro")
 	if err != nil {
-		return fmt.Errorf("okit not found in PATH")
+		return fmt.Errorf("maestro not found in PATH")
 	}
 	out, err := exec.Command(path, "--help").Output()
 	if err == nil {
@@ -168,7 +168,7 @@ func missingOptional(cfg map[string]interface{}, optional []string) []string {
 func checkDatabase(path string) error {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		return fmt.Errorf("opencode-kit.db not found (run 'okit daily' to initialize)")
+		return fmt.Errorf("opencode-kit.db not found (run 'maestro daily' to initialize)")
 	}
 	if err != nil {
 		return fmt.Errorf("stat db: %w", err)

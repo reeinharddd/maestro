@@ -1,0 +1,2 @@
+ALTER TABLE models ADD COLUMN architecture TEXT NOT NULL DEFAULT '';
+ALTER TABLE models ADD COLUMN recommended_use TEXT NOT NULL DEFAULT '';

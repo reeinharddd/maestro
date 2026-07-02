@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>maestro — direction variants</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --gold: #c8a064;
+    --gold-light: #e8d5a3;
+    --gold-dark: #a08050;
+    --bg: #0d0d0f;
+    --surface: #1a1a1e;
+    --border: #2a2a2e;
+    --text: #e8e6e3;
+    --dim: rgba(232,230,227,0.45);
+    --accent: var(--gold);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 2rem;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .subtitle {
+    color: var(--dim);
+    font-size: 1rem;
+    max-width: 640px;
+    margin-bottom: 0.5rem;
+    font-weight: 300;
+  }
+  .tag {
+    display: inline-block;
+    background: var(--surface);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-right: 0.3rem;
+    border: 1px solid rgba(200,160,100,0.15);
+  }
+  .label-row {
+    margin-bottom: 2.5rem;
+  }
+  .label-row .label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(200,160,100,0.5);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 4rem;
+  }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(200,160,100,0.2); }
+  .card-header {
+    padding: 1.25rem 1.5rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-header h2 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .card-header .dir-badge {
+    font-size: 0.6rem;
+    background: rgba(200,160,100,0.12);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .card-body { padding: 1.5rem; }
+  .card-body > svg { display: block; margin: 0 auto; max-width: 100%; }
+  .tagline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: rgba(200,160,100,0.7);
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  .variants-row { display: flex; gap: 1rem; margin-top: 1.25rem; justify-content: center; flex-wrap: wrap; }
+  .variant-box { background: var(--bg); border-radius: 8px; padding: 0.75rem; text-align: center; border: 1px solid rgba(255,255,255,0.04); }
+  .variant-box svg { display: block; margin: 0 auto; }
+  .variant-label { font-size: 0.6rem; color: var(--dim); margin-top: 0.35rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .terminal-wrap {
+    background: #0a0a0c;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.25rem;
+    font-family: 'DM Mono', 'Fira Code', monospace;
+    font-size: 0.55rem;
+    line-height: 1.35;
+    white-space: pre;
+    overflow-x: auto;
+    color: #888;
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .compare { margin: 3rem 0; }
+  .compare h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(200,160,100,0.6);
+    margin-bottom: 1rem;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th {
+    color: var(--dim);
+    font-weight: 500;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  td:first-child { font-weight: 500; color: var(--gold); }
+  .rec { color: #22c55e; font-size: 0.65rem; font-weight: 500; }
+
+  .angle-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    color: var(--dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .notes {
+    max-width: 720px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--dim);
+    margin-bottom: 3rem;
+  }
+  .notes strong { color: var(--text); font-weight: 500; }
+  .notes .hunch {
+    margin-top: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border-left: 2px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    color: rgba(200,160,100,0.8);
+    font-size: 0.95rem;
+  }
+
+  .back { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+  .back a { color: var(--dim); text-decoration: none; font-size: 0.8rem; transition: color 0.2s; }
+  .back a:hover { color: var(--gold); }
+  .back span { color: var(--border); margin: 0 0.3rem; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .card { animation: fadeUp 0.5s ease both; }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="label-row">
+  <span class="label">/ logo · direction variants</span>
+</div>
+
+<h1>maestro</h1>
+<p class="subtitle">
+  Four baton orientations. Same tool, different attitude.
+  <span class="tag">gold palette</span><span class="tag">v0</span>
+</p>
+
+<div class="notes">
+  <p><strong>The idea:</strong> a baton is the universal symbol of orchestration — a tool that doesn't play music itself but enables everyone else to play in sync. The angle changes the emotional stance: horizontal is calm authority, ascending is rising action, vertical is commanding presence, diagonal is decisive impact.</p>
+</div>
+
+<div class="grid">
+
+  <!-- ──── GUIDING (horizontal / 0°) ──── -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <span class="dir-badge">A</span> Guiding
+        <span class="angle-badge">0°</span>
+      </h2>
+    </div>
+    <div class="card-body">
+      <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="maestro guiding variant">
+        <defs>
+          <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#a08050"/>
+            <stop offset="35%" stop-color="#e8d5a3"/>
+            <stop offset="65%" stop-color="#c8a064"/>
+            <stop offset="100%" stop-color="#a08050"/>
+          </linearGradient>
+          <linearGradient id="g-glow" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#c8a064" stop-opacity="0"/>
+            <stop offset="30%" stop-color="#c8a064" stop-opacity="0.35"/>
+            <stop offset="70%" stop-color="#c8a064" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#c8a064" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="g-blur">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <rect x="40" y="73" width="220" height="10" rx="5" fill="url(#g-glow)"/>
+        <g filter="url(#g-blur)">
+          <rect x="48" y="75" width="200" height="6" rx="3" fill="url(#g-gold)"/>
+          <rect x="48" y="75" width="30" height="6" rx="2" fill="#6b5c3a" opacity="0.5"/>
+          <ellipse cx="248" cy="78" rx="4" ry="4" fill="#e8d5a3" opacity="0.6"/>
+        </g>
+        <circle cx="100" cy="48" r="1.5" fill="#c8a064" opacity="0.35"/>
+        <circle cx="160" cy="38" r="1" fill="#c8a064" opacity="0.25"/>
+        <circle cx="220" cy="45" r="1.5" fill="#c8a064" opacity="0.2"/>
+        <circle cx="140" cy="118" r="1" fill="#c8a064" opacity="0.15"/>
+      </svg>
+      <p class="tagline">Steady. The baton rests level — a conductor at ease but in full control.</p>
+      <div class="variants-row">
+        <div class="variant-box">
+          <svg viewBox="0 0 180 60" width="180" height="60">
+            <rect x="20" y="27" width="140" height="5" rx="2.5" fill="#c8a064"/>
+            <rect x="20" y="27" width="20" height="5" rx="2" fill="#a08050" opacity="0.5"/>
+          </svg>
+          <div class="variant-label">light bg</div>
+        </div>
+        <div class="variant-box">
+          <svg viewBox="0 0 180 60" width="180" height="60">
+            <rect x="20" y="27" width="140" height="5" rx="2.5" fill="#a1a1aa"/>
+            <rect x="20" y="27" width="20" height="5" rx="2" fill="#666"/>
+          </svg>
+          <div class="variant-label">mono</div>
+        </div>
+      </div>
+      <div class="terminal-wrap">┌───────────────────────────────────────────┐
+│  ════════════════▸ maestro                 │
+│                ~                           │
+│  guiding · 0°  steady horizon             │
+└───────────────────────────────────────────┘</div>
+    </div>
+  </div>
+
+  <!-- ──── ASCENDING (+30°) ──── -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <span class="dir-badge">B</span> Ascending
+        <span class="angle-badge">+30°</span>
+      </h2>
+    </div>
+    <div class="card-body">
+      <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="maestro ascending variant">
+        <defs>
+          <linearGradient id="a-gold" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#a08050"/>
+            <stop offset="35%" stop-color="#e8d5a3"/>
+            <stop offset="65%" stop-color="#c8a064"/>
+            <stop offset="100%" stop-color="#a08050"/>
+          </linearGradient>
+          <filter id="a-blur">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <line x1="55" y1="135" x2="250" y2="22" stroke="#c8a064" stroke-width="8" stroke-linecap="round" opacity="0.12"/>
+        <g filter="url(#a-blur)" transform="rotate(-30, 160, 80)">
+          <rect x="48" y="77" width="200" height="6" rx="3" fill="url(#a-gold)"/>
+          <rect x="48" y="77" width="30" height="6" rx="2" fill="#6b5c3a" opacity="0.5"/>
+          <ellipse cx="248" cy="80" rx="4" ry="4" fill="#e8d5a3" opacity="0.6"/>
+        </g>
+        <circle cx="120" cy="100" r="1.5" fill="#c8a064" opacity="0.45"/>
+        <circle cx="160" cy="75" r="1" fill="#c8a064" opacity="0.3"/>
+        <circle cx="200" cy="48" r="1.5" fill="#c8a064" opacity="0.25"/>
+        <circle cx="235" cy="25" r="1.2" fill="#c8a064" opacity="0.5"/>
+        <circle cx="145" cy="120" r="0.8" fill="#c8a064" opacity="0.15"/>
+      </svg>
+      <p class="tagline">Rising. A cue, a crescendo. The baton lifts — energy gathering.</p>
+      <div class="variants-row">
+        <div class="variant-box">
+          <svg viewBox="0 0 180 80" width="180" height="80">
+            <g transform="rotate(-30, 90, 40)">
+              <rect x="20" y="37" width="140" height="5" rx="2.5" fill="#c8a064"/>
+              <rect x="20" y="37" width="20" height="5" rx="2" fill="#a08050" opacity="0.5"/>
+            </g>
+          </svg>
+          <div class="variant-label">light bg</div>
+        </div>
+        <div class="variant-box">
+          <svg viewBox="0 0 180 80" width="180" height="80">
+            <g transform="rotate(-30, 90, 40)">
+              <rect x="20" y="37" width="140" height="5" rx="2.5" fill="#a1a1aa"/>
+              <rect x="20" y="37" width="20" height="5" rx="2" fill="#666"/>
+            </g>
+          </svg>
+          <div class="variant-label">mono</div>
+        </div>
+      </div>
+      <div class="terminal-wrap">┌───────────────────────────────────────────┐
+│         ╱ maestro                           │
+│        ╱                                    │
+│  ascending · +30°  rising action            │
+└───────────────────────────────────────────┘</div>
+    </div>
+  </div>
+
+  <!-- ──── COMMAND (90°) ──── -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <span class="dir-badge">C</span> Command
+        <span class="angle-badge">90°</span>
+      </h2>
+    </div>
+    <div class="card-body">
+      <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="maestro command variant">
+        <defs>
+          <linearGradient id="c-gold" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#a08050"/>
+            <stop offset="35%" stop-color="#e8d5a3"/>
+            <stop offset="65%" stop-color="#c8a064"/>
+            <stop offset="100%" stop-color="#a08050"/>
+          </linearGradient>
+          <filter id="c-blur">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#c-blur)">
+          <rect x="150" y="18" width="6" height="110" rx="3" fill="url(#c-gold)"/>
+          <rect x="150" y="18" width="6" height="22" rx="2" fill="#6b5c3a" opacity="0.5"/>
+          <ellipse cx="153" cy="128" rx="4" ry="4" fill="#e8d5a3" opacity="0.6"/>
+        </g>
+        <line x1="60" y1="140" x2="260" y2="140" stroke="#c8a064" stroke-width="0.8" opacity="0.12" stroke-dasharray="3 4"/>
+        <ellipse cx="153" cy="75" rx="16" ry="40" fill="#c8a064" opacity="0.03"/>
+        <circle cx="100" cy="85" r="1.5" fill="#c8a064" opacity="0.25"/>
+        <circle cx="200" cy="60" r="1" fill="#c8a064" opacity="0.2"/>
+        <circle cx="80" cy="50" r="1" fill="#c8a064" opacity="0.12"/>
+        <circle cx="220" cy="105" r="1" fill="#c8a064" opacity="0.15"/>
+      </svg>
+      <p class="tagline">Vertical. Presence as authority. The baton points up — a ceremonial staff.</p>
+      <div class="variants-row">
+        <div class="variant-box">
+          <svg viewBox="0 0 80 100" width="80" height="100">
+            <rect x="37" y="15" width="6" height="70" rx="3" fill="#c8a064"/>
+            <rect x="37" y="15" width="6" height="14" rx="2" fill="#a08050" opacity="0.5"/>
+          </svg>
+          <div class="variant-label">light bg</div>
+        </div>
+        <div class="variant-box">
+          <svg viewBox="0 0 80 100" width="80" height="100">
+            <rect x="37" y="15" width="6" height="70" rx="3" fill="#a1a1aa"/>
+            <rect x="37" y="15" width="6" height="14" rx="2" fill="#666"/>
+          </svg>
+          <div class="variant-label">mono</div>
+        </div>
+      </div>
+      <div class="terminal-wrap">┌───────────────────────────────────────────┐
+│              │                               │
+│              │ maestro                       │
+│  command · 90°  presence                    │
+└───────────────────────────────────────────┘</div>
+    </div>
+  </div>
+
+  <!-- ──── IMPACT (−55°) ──── -->
+  <div class="card">
+    <div class="card-header">
+      <h2>
+        <span class="dir-badge">D</span> Impact
+        <span class="angle-badge">−55°</span>
+      </h2>
+    </div>
+    <div class="card-body">
+      <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="maestro impact variant">
+        <defs>
+          <linearGradient id="i-gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a08050"/>
+            <stop offset="35%" stop-color="#e8d5a3"/>
+            <stop offset="65%" stop-color="#c8a064"/>
+            <stop offset="100%" stop-color="#a08050"/>
+          </linearGradient>
+          <linearGradient id="i-ring" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#c8a064" stop-opacity="0.15"/>
+            <stop offset="50%" stop-color="#c8a064" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#c8a064" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="i-blur">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <circle cx="235" cy="115" r="28" fill="none" stroke="url(#i-ring)" stroke-width="1.5"/>
+        <circle cx="235" cy="115" r="16" fill="none" stroke="#c8a064" stroke-width="0.8" opacity="0.15"/>
+        <circle cx="235" cy="115" r="7" fill="#c8a064" opacity="0.08"/>
+        <g filter="url(#i-blur)" transform="rotate(55, 160, 80)">
+          <rect x="48" y="77" width="200" height="6" rx="3" fill="url(#i-gold)"/>
+          <rect x="48" y="77" width="30" height="6" rx="2" fill="#6b5c3a" opacity="0.5"/>
+          <ellipse cx="248" cy="80" rx="4" ry="4" fill="#e8d5a3" opacity="0.6"/>
+        </g>
+        <line x1="80" y1="142" x2="225" y2="118" stroke="#c8a064" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
+        <circle cx="235" cy="115" r="2" fill="#e8d5a3" opacity="0.7"/>
+      </svg>
+      <p class="tagline">The strike. Motion captured at the decisive instant — the cut.</p>
+      <div class="variants-row">
+        <div class="variant-box">
+          <svg viewBox="0 0 200 90" width="200" height="90">
+            <g transform="rotate(55, 100, 45)">
+              <rect x="20" y="42" width="150" height="5" rx="2.5" fill="#c8a064"/>
+              <rect x="20" y="42" width="22" height="5" rx="2" fill="#a08050" opacity="0.5"/>
+            </g>
+          </svg>
+          <div class="variant-label">light bg</div>
+        </div>
+        <div class="variant-box">
+          <svg viewBox="0 0 200 90" width="200" height="90">
+            <g transform="rotate(55, 100, 45)">
+              <rect x="20" y="42" width="150" height="5" rx="2.5" fill="#a1a1aa"/>
+              <rect x="20" y="42" width="22" height="5" rx="2" fill="#666"/>
+            </g>
+          </svg>
+          <div class="variant-label">mono</div>
+        </div>
+      </div>
+      <div class="terminal-wrap">┌───────────────────────────────────────────┐
+│         ╲ maestro                           │
+│          ╲                                  │
+│  impact · −55°  decisive cut                │
+│            ●  impact point                  │
+└───────────────────────────────────────────┘</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ──── COMPARISON TABLE ──── -->
+<div class="compare">
+  <h3>direction comparison</h3>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Guiding (0°)</th>
+        <th>Ascending (+30°)</th>
+        <th>Command (90°)</th>
+        <th>Impact (−55°)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Attitude</td>
+        <td>calm authority</td>
+        <td>momentum / growth</td>
+        <td>presence / gravity</td>
+        <td>energy / precision</td>
+      </tr>
+      <tr>
+        <td>Motion feel</td>
+        <td>static, steadfast</td>
+        <td>rising, anticipatory</td>
+        <td>ceremonial, grounded</td>
+        <td>dynamic, decisive</td>
+      </tr>
+      <tr>
+        <td>Distinctiveness</td>
+        <td>common in music logos</td>
+        <td>fresh — less used</td>
+        <td class="rec">unique — vertical baton</td>
+        <td class="rec">strong — the "cut"</td>
+      </tr>
+      <tr>
+        <td>Terminal fit</td>
+        <td>good — level horizon</td>
+        <td class="rec">best — rising = growth</td>
+        <td>ok — tall mark</td>
+        <td>good — diagonal reads well</td>
+      </tr>
+      <tr>
+        <td>Scalability</td>
+        <td class="rec">best — horizontal = favicon</td>
+        <td>good — compact</td>
+        <td>needs vertical space</td>
+        <td>good — natural diagonal</td>
+      </tr>
+      <tr>
+        <td>Orchestration metaphor</td>
+        <td>steady hand</td>
+        <td class="rec">rising crescendo = emerging AI</td>
+        <td>master of the house</td>
+        <td>the decisive prompt</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="notes">
+  <p><strong>Pick your favorite direction (or hybrid).</strong> I'll produce a polished <code>logo-hires.html</code> variant with the chosen angle — gold gradient, glow, impact rings, light/mono/terminal treatments. Options: a <em>primary</em> mark for branding and a <em>motion</em> mark for loading/animation states.</p>
+  <div class="hunch">
+    Ascending (+30°) is the most distinctive and maps beautifully to "orchestrator" as a rising force. Impact (−55°) has the strongest visual hook if you want the "decisive cut" metaphor — also closest to the original Downbeat. Command (90°) is the dark horse: almost nobody does a vertical baton, so it reads as a ceremonial sceptre of control.
+  </div>
+</div>
+
+<div class="back">
+  <a href="logo-hires.html">← logo-hires.html (Downbeat &amp; Arena)</a>
+  <span>·</span>
+  <a href="logo-exploration.html">exploration (6 concepts)</a>
+  <span>·</span>
+  <a href="logo-iteration.html">iteration</a>
+  <span>·</span>
+  <a href="moodboard.html">moodboard</a>
+</div>
+
+</div><!-- .container -->
+</body>
+</html>

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reeinharddd/okit/internal/config"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/config"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func OpenCodeConfigDir() string {

@@ -1,9 +1,3 @@
-// Package mcp provides the MCP server for okit.
-// It exposes tools and resources for AI agents to interact with okit.
-//
-// Copyright 2026 OpenCode Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 package mcp
 
 import (
@@ -14,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/reeinharddd/okit/internal/classifier"
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/classifier"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 // Server represents an MCP server.

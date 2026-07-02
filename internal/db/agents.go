@@ -3,23 +3,26 @@ package db
 import (
 	"fmt"
 
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func (d *DB) UpsertAgent(a *models.Agent) error {
-	_, err := d.Exec(`INSERT INTO agents (id, task_type, description, current_model_id, fallback_ids, prompt_file, temperature, max_steps, permission, color, mode, hidden, status, source)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		task_type=excluded.task_type, description=excluded.description,
-		current_model_id=excluded.current_model_id, fallback_ids=excluded.fallback_ids,
-		prompt_file=excluded.prompt_file, temperature=excluded.temperature,
-		max_steps=excluded.max_steps, permission=excluded.permission,
-		color=excluded.color, mode=excluded.mode, hidden=excluded.hidden,
-		status=excluded.status, source=excluded.source`,
-		a.ID, a.TaskType, a.Description, a.CurrentModelID, a.FallbackIDs,
-		a.PromptFile, a.Temperature, a.MaxSteps, a.Permission, a.Color,
-		a.Mode, boolToInt(a.Hidden), a.Status, a.Source)
-	return err
+	return d.upsertRow("agents", "id", []upsertCol{
+		{"id", a.ID},
+		{"task_type", a.TaskType},
+		{"description", a.Description},
+		{"current_model_id", a.CurrentModelID},
+		{"fallback_ids", a.FallbackIDs},
+		{"prompt_file", a.PromptFile},
+		{"temperature", a.Temperature},
+		{"max_steps", a.MaxSteps},
+		{"permission", a.Permission},
+		{"color", a.Color},
+		{"mode", a.Mode},
+		{"hidden", boolToInt(a.Hidden)},
+		{"status", a.Status},
+		{"source", a.Source},
+	})
 }
 
 func (d *DB) ListAgents() ([]models.Agent, error) {

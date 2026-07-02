@@ -14,7 +14,7 @@ Four foundational defects fixed: snapshot column mismatch, config path ignored e
 |--------|--------|---------|
 | `snapshot-schema` | Created (main spec) | Migration `000002` renames `snapshots.data` → `snapshots.content` to match Go struct |
 | `config-path-unification` | Created (main spec) | Shared `internal/config.ConfigDir()` breaks circular import, respects `$OPENCODE_CONFIG_DIR` |
-| `cli-commands` | Created (main spec) | `okit agents` subcommand with list/get/delete backed by existing DB CRUD |
+| `cli-commands` | Created (main spec) | `maestro agents` subcommand with list/get/delete backed by existing DB CRUD |
 | Stale docs | Deleted | `HANDOFF.md` and `STALE_TESTS.md` removed |
 
 ## Specs Synced to Main

@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func seedTestAgents(t *testing.T, dbPath string) {
@@ -29,7 +29,7 @@ func seedTestAgents(t *testing.T, dbPath string) {
 
 func TestAgentsList_PrintsAllAgents(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	seedTestAgents(t, dbPath)
 
 	cmd := newAgentsCmd(&dbPath)
@@ -44,7 +44,7 @@ func TestAgentsList_PrintsAllAgents(t *testing.T) {
 
 func TestAgentsGet_PrintsAgentDetails(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	seedTestAgents(t, dbPath)
 
 	cmd := newAgentsCmd(&dbPath)
@@ -59,7 +59,7 @@ func TestAgentsGet_PrintsAgentDetails(t *testing.T) {
 
 func TestAgentsGet_NonExistentReturnsError(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	seedTestAgents(t, dbPath)
 
 	cmd := newAgentsCmd(&dbPath)
@@ -74,7 +74,7 @@ func TestAgentsGet_NonExistentReturnsError(t *testing.T) {
 
 func TestAgentsDelete_RemovesAgent(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	seedTestAgents(t, dbPath)
 
 	cmd := newAgentsCmd(&dbPath)
@@ -99,7 +99,7 @@ func TestAgentsDelete_RemovesAgent(t *testing.T) {
 
 func TestAgentsDelete_NonExistentReturnsError(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	d, err := db.Open(dbPath)
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +118,7 @@ func TestAgentsDelete_NonExistentReturnsError(t *testing.T) {
 
 func TestAgentsList_Empty(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	d, err := db.Open(dbPath)
 	if err != nil {
 		t.Fatal(err)

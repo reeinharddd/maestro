@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-Four independent fixes: (1) new SQL migration renames `snapshots.data` → `snapshots.content`, (2) extract `ConfigDir()` to `internal/config` so both `db.DefaultPath()` and `cli.OpenCodeConfigDir()` share one resolution, (3) new `internal/cli/agents.go` for `okit agents list|get|delete`, (4) delete stale docs.
+Four independent fixes: (1) new SQL migration renames `snapshots.data` → `snapshots.content`, (2) extract `ConfigDir()` to `internal/config` so both `db.DefaultPath()` and `cli.OpenCodeConfigDir()` share one resolution, (3) new `internal/cli/agents.go` for `maestro agents list|get|delete`, (4) delete stale docs.
 
 ## Architecture Decisions
 
@@ -56,7 +56,7 @@ func newAgentsCmd(dbPath *string) *cobra.Command
 |-------|------|----------|
 | Unit | `ConfigDir()` resolution | Table-driven test with env var set/unset |
 | Migration | 000002 up + down | Open in-memory DB, apply 000001, apply 000002, verify column name, verify down reverts |
-| Manual | `okit agents list` | Smoke test against existing DB with agents |
+| Manual | `maestro agents list` | Smoke test against existing DB with agents |
 
 ## Migration / Rollout
 

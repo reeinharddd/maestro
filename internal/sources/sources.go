@@ -7,10 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/config"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 type Service struct {
@@ -34,7 +37,99 @@ func (s *Service) Sync(ctx context.Context) error {
 	return nil
 }
 
+func (s *Service) AddSource(ctx context.Context, remoteURL string) (*models.Source, error) {
+	id := sourceIDFromURL(remoteURL)
+	localPath := filepath.Join(config.SourcesDir(), id)
+
+	existing, err := s.db.GetSource(id)
+	if err == nil && existing != nil {
+		return nil, fmt.Errorf("source %q already exists (url: %s)", id, existing.RemoteURL)
+	}
+
+	if err := os.MkdirAll(config.SourcesDir(), 0755); err != nil {
+		return nil, fmt.Errorf("create sources dir: %w", err)
+	}
+
+	source := &models.Source{
+		ID:         id,
+		RemoteURL:  remoteURL,
+		LocalPath:  localPath,
+		Status:     "active",
+		LastSynced: 0,
+	}
+
+	if err := s.db.UpsertSource(source); err != nil {
+		return nil, fmt.Errorf("upsert source: %w", err)
+	}
+
+	if err := s.syncSource(ctx, *source); err != nil {
+		fmt.Printf("  Warning: initial sync of %s failed: %v\n", id, err)
+	}
+
+	return source, nil
+}
+
+func (s *Service) RemoveSource(ctx context.Context, id string) error {
+	source, err := s.db.GetSource(id)
+	if err != nil {
+		return fmt.Errorf("source %q not found", id)
+	}
+
+	if source.LocalPath != "" {
+		os.RemoveAll(source.LocalPath)
+	}
+
+	if err := s.db.DeleteSource(id); err != nil {
+		return fmt.Errorf("delete source %q: %w", id, err)
+	}
+
+	fmt.Printf("  Removed source %s (was: %s)\n", id, source.RemoteURL)
+	return nil
+}
+
+func (s *Service) SyncSourceByID(ctx context.Context, id string) error {
+	source, err := s.db.GetSource(id)
+	if err != nil {
+		return fmt.Errorf("source %q not found", id)
+	}
+	return s.syncSource(ctx, *source)
+}
+
+func (s *Service) SourceByID(id string) (*models.Source, error) {
+	return s.db.GetSource(id)
+}
+
+func (s *Service) AllSources() ([]models.Source, error) {
+	return s.db.ListSources()
+}
+
+func sourceIDFromURL(rawURL string) string {
+	u := rawURL
+
+	u = strings.TrimPrefix(u, "https://")
+	u = strings.TrimPrefix(u, "http://")
+	u = strings.TrimPrefix(u, "git@")
+	u = strings.TrimPrefix(u, "ssh://")
+
+	u = strings.ReplaceAll(u, ":", "-")
+	u = strings.ReplaceAll(u, "/", "-")
+	u = strings.ReplaceAll(u, ".", "-")
+
+	u = strings.TrimSuffix(u, "-git")
+
+	re := regexp.MustCompile(`-+`)
+	u = re.ReplaceAllString(u, "-")
+
+	u = strings.Trim(u, "-")
+
+	return u
+}
+
 func (s *Service) syncSource(ctx context.Context, source models.Source) error {
+	if source.RemoteURL == "" {
+		return fmt.Errorf("source %q has no remote URL", source.ID)
+	}
+
 	if _, err := os.Stat(source.LocalPath); os.IsNotExist(err) {
 		cmd := exec.CommandContext(ctx, "git", "clone", source.RemoteURL, source.LocalPath)
 		cmd.Stdout = nil
@@ -56,6 +151,7 @@ func (s *Service) syncSource(ctx context.Context, source models.Source) error {
 	commit := string(out[:40])
 
 	source.Commit = commit
+	source.LastSynced = time.Now().Unix()
 	if err := s.db.UpsertSource(&source); err != nil {
 		return err
 	}
@@ -64,46 +160,65 @@ func (s *Service) syncSource(ctx context.Context, source models.Source) error {
 	return err
 }
 
+
 func (s *Service) DiscoverItems(ctx context.Context, source models.Source) ([]models.SourceItem, error) {
-	var items []models.SourceItem
-
-	for _, subdir := range []string{"skills", "agents", "commands"} {
-		dir := filepath.Join(source.LocalPath, subdir)
-		entries, err := os.ReadDir(dir)
-		if err != nil {
-			continue
-		}
-		for _, entry := range entries {
-			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
-				continue
-			}
-			name := strings.TrimSuffix(entry.Name(), ".md")
-			itemType := subdir[:len(subdir)-1]
-
-			item := models.SourceItem{
-				ID:         source.ID + "-" + name,
-				SourceID:   source.ID,
-				Type:       itemType,
-				SourcePath: filepath.Join(dir, entry.Name()),
-				Status:     "active",
-			}
-			items = append(items, item)
-		}
+	scanned, err := ScanAll(source.LocalPath)
+	if err != nil {
+		return nil, fmt.Errorf("scan source %s: %w", source.ID, err)
 	}
 
-	for _, item := range items {
-		skill := models.Skill{
-			ID:         item.ID,
-			Source:     source.ID,
-			SourcePath: item.SourcePath,
-			Type:       item.Type,
-			Status:     item.Status,
+	var items []models.SourceItem
+	for _, si := range scanned {
+		item := models.SourceItem{
+			ID:         source.ID + "-" + si.ID,
+			SourceID:   source.ID,
+			Type:       si.Type,
+			SourcePath: si.SourcePath,
+			Status:     "active",
 		}
-		_ = s.db.UpsertSkill(&skill)
-		_ = s.db.UpsertSourceItem(&item)
+
+		s.upsertEntity(source.ID, si)
+
+		if err := s.db.UpsertSourceItem(&item); err != nil {
+			fmt.Printf("  Warning: upsert source item %s: %v\n", item.ID, err)
+			continue
+		}
+		items = append(items, item)
 	}
 
 	return items, nil
+}
+
+func (s *Service) upsertEntity(sourceID string, item ScannedItem) {
+	switch item.Type {
+	case "skill":
+		_ = s.db.UpsertSkill(&models.Skill{
+			ID:         sourceID + "-" + item.ID,
+			Source:     sourceID,
+			SourcePath: item.SourcePath,
+			Status:     "active",
+		})
+	case "agent":
+		_ = s.db.UpsertAgent(&models.Agent{
+			ID:     sourceID + "-" + item.ID,
+			Source: sourceID,
+			Mode:   "subagent",
+			Status: "active",
+		})
+	case "command":
+		_ = s.db.UpsertCommand(&models.Command{
+			ID:     sourceID + "-" + item.ID,
+			Source: sourceID,
+			Status: "active",
+		})
+	case "mcp":
+		_ = s.db.UpsertMCP(&models.MCPServer{
+			ID:      sourceID + "-" + item.ID,
+			Source:  sourceID,
+			Type:    "local",
+			Enabled: true,
+		})
+	}
 }
 
 func (s *Service) ImportSourceRegistry(registryPath string) error {
@@ -130,11 +245,11 @@ func (s *Service) ImportSourceRegistry(registryPath string) error {
 
 	for id, srcData := range registry.Sources {
 		source := models.Source{
-			ID:     id,
+			ID:        id,
 			RemoteURL: "",
 			LocalPath: "",
-			Commit: srcData.Commit,
-			Status: "active",
+			Commit:    srcData.Commit,
+			Status:    "active",
 		}
 		if err := s.db.UpsertSource(&source); err != nil {
 			return fmt.Errorf("upsert source %s: %w", id, err)

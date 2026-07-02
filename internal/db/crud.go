@@ -1,16 +1,23 @@
 package db
 
-import "github.com/reeinharddd/okit/pkg/models"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/reeinharrrd/maestro/pkg/models"
+)
 
 func (d *DB) UpsertCommand(c *models.Command) error {
-	_, err := d.Exec(`INSERT INTO commands (id, command_template, description, agent, model, subtask, source, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		command_template=excluded.command_template, description=excluded.description,
-		agent=excluded.agent, model=excluded.model, subtask=excluded.subtask,
-		source=excluded.source, status=excluded.status`,
-		c.ID, c.Template, c.Description, c.Agent, c.Model, boolToInt(c.Subtask), c.Source, c.Status)
-	return err
+	return d.upsertRow("commands", "id", []upsertCol{
+		{"id", c.ID},
+		{"command_template", c.Template},
+		{"description", c.Description},
+		{"agent", c.Agent},
+		{"model", c.Model},
+		{"subtask", boolToInt(c.Subtask)},
+		{"source", c.Source},
+		{"status", c.Status},
+	})
 }
 
 func (d *DB) ListCommands() ([]models.Command, error) {
@@ -32,15 +39,22 @@ func (d *DB) ListCommands() ([]models.Command, error) {
 	return out, nil
 }
 
-func (d *DB) UpsertMCP(m *models.MCPServer) error {
-	_, err := d.Exec(`INSERT INTO mcp_servers (id, type, command, url, enabled, env_vars, timeout_ms, source)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		type=excluded.type, command=excluded.command, url=excluded.url,
-		enabled=excluded.enabled, env_vars=excluded.env_vars,
-		timeout_ms=excluded.timeout_ms, source=excluded.source`,
-		m.ID, m.Type, m.Command, m.URL, boolToInt(m.Enabled), m.EnvVars, m.Timeout, m.Source)
+func (d *DB) DeleteCommand(id string) error {
+	_, err := d.Exec(`DELETE FROM commands WHERE id=?`, id)
 	return err
+}
+
+func (d *DB) UpsertMCP(m *models.MCPServer) error {
+	return d.upsertRow("mcp_servers", "id", []upsertCol{
+		{"id", m.ID},
+		{"type", m.Type},
+		{"command", m.Command},
+		{"url", m.URL},
+		{"enabled", boolToInt(m.Enabled)},
+		{"env_vars", m.EnvVars},
+		{"timeout_ms", m.Timeout},
+		{"source", m.Source},
+	})
 }
 
 func (d *DB) ListMCPs() ([]models.MCPServer, error) {
@@ -62,19 +76,32 @@ func (d *DB) ListMCPs() ([]models.MCPServer, error) {
 	return out, nil
 }
 
-func (d *DB) UpsertSkill(s *models.Skill) error {
-	_, err := d.Exec(`INSERT INTO skills (id, source, source_path, target_path, type, status, hash, last_synced)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		source=excluded.source, source_path=excluded.source_path,
-		target_path=excluded.target_path, type=excluded.type,
-		status=excluded.status, hash=excluded.hash, last_synced=excluded.last_synced`,
-		s.ID, s.Source, s.SourcePath, s.TargetPath, s.Type, s.Status, s.Hash, s.LastSynced)
+func (d *DB) DeleteMCP(id string) error {
+	_, err := d.Exec(`DELETE FROM mcp_servers WHERE id=?`, id)
 	return err
 }
 
+func (d *DB) UpsertSkill(s *models.Skill) error {
+	return d.upsertRow("skills", "id", []upsertCol{
+		{"id", s.ID},
+		{"source", s.Source},
+		{"source_path", s.SourcePath},
+		{"target_path", s.TargetPath},
+		{"type", s.Type},
+		{"status", s.Status},
+		{"hash", s.Hash},
+		{"last_synced", s.LastSynced},
+		{"description", s.Description},
+		{"category", s.Category},
+		{"tags", s.Tags},
+		{"triggers", s.Triggers},
+		{"size_bytes", s.SizeBytes},
+		{"filename", s.Filename},
+	})
+}
+
 func (d *DB) ListSkills() ([]models.Skill, error) {
-	rows, err := d.Query(`SELECT id, COALESCE(source,''), COALESCE(source_path,''), COALESCE(target_path,''), COALESCE(type,'skill'), COALESCE(status,'active'), COALESCE(hash,''), COALESCE(last_synced,0) FROM skills ORDER BY id`)
+	rows, err := d.Query(`SELECT id, COALESCE(source,''), COALESCE(source_path,''), COALESCE(target_path,''), COALESCE(type,'skill'), COALESCE(status,'active'), COALESCE(hash,''), COALESCE(last_synced,0), COALESCE(description,''), COALESCE(category,''), COALESCE(tags,''), COALESCE(triggers,''), COALESCE(size_bytes,0), COALESCE(filename,'') FROM skills ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +109,53 @@ func (d *DB) ListSkills() ([]models.Skill, error) {
 	var out []models.Skill
 	for rows.Next() {
 		var s models.Skill
-		if err := rows.Scan(&s.ID, &s.Source, &s.SourcePath, &s.TargetPath, &s.Type, &s.Status, &s.Hash, &s.LastSynced); err != nil {
+		if err := rows.Scan(&s.ID, &s.Source, &s.SourcePath, &s.TargetPath, &s.Type, &s.Status, &s.Hash, &s.LastSynced, &s.Description, &s.Category, &s.Tags, &s.Triggers, &s.SizeBytes, &s.Filename); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (d *DB) DeleteSkill(id string) error {
+	_, err := d.Exec(`DELETE FROM skills WHERE id=?`, id)
+	return err
+}
+
+func (d *DB) UpdateSkillMeta(id string, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
+	var sb strings.Builder
+	sb.WriteString("UPDATE skills SET ")
+	first := true
+	args := make([]any, 0, len(updates)+1)
+	for k, v := range updates {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(k)
+		sb.WriteString("=?")
+		args = append(args, v)
+		first = false
+	}
+	sb.WriteString(" WHERE id=?")
+	args = append(args, id)
+	_, err := d.Exec(sb.String(), args...)
+	return err
+}
+
+func (d *DB) SearchSkills(query string) ([]models.Skill, error) {
+	pattern := "%" + query + "%"
+	rows, err := d.Query(`SELECT id, COALESCE(source,''), COALESCE(source_path,''), COALESCE(target_path,''), COALESCE(type,'skill'), COALESCE(status,'active'), COALESCE(hash,''), COALESCE(last_synced,0), COALESCE(description,''), COALESCE(category,''), COALESCE(tags,''), COALESCE(triggers,''), COALESCE(size_bytes,0), COALESCE(filename,'') FROM skills WHERE id LIKE ? OR description LIKE ? OR tags LIKE ? OR category LIKE ? ORDER BY id`, pattern, pattern, pattern, pattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.Skill
+	for rows.Next() {
+		var s models.Skill
+		if err := rows.Scan(&s.ID, &s.Source, &s.SourcePath, &s.TargetPath, &s.Type, &s.Status, &s.Hash, &s.LastSynced, &s.Description, &s.Category, &s.Tags, &s.Triggers, &s.SizeBytes, &s.Filename); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
@@ -91,14 +164,15 @@ func (d *DB) ListSkills() ([]models.Skill, error) {
 }
 
 func (d *DB) UpsertSourceItem(s *models.SourceItem) error {
-	_, err := d.Exec(`INSERT INTO source_items (id, source_id, type, source_path, target_path, hash, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		source_id=excluded.source_id, type=excluded.type,
-		source_path=excluded.source_path, target_path=excluded.target_path,
-		hash=excluded.hash, status=excluded.status`,
-		s.ID, s.SourceID, s.Type, s.SourcePath, s.TargetPath, s.Hash, s.Status)
-	return err
+	return d.upsertRow("source_items", "id", []upsertCol{
+		{"id", s.ID},
+		{"source_id", s.SourceID},
+		{"type", s.Type},
+		{"source_path", s.SourcePath},
+		{"target_path", s.TargetPath},
+		{"hash", s.Hash},
+		{"status", s.Status},
+	})
 }
 
 func (d *DB) ListSourceItems() ([]models.SourceItem, error) {
@@ -133,17 +207,45 @@ func (d *DB) DeleteSourceItem(id string) error {
 	return err
 }
 
-func (d *DB) UpsertLSPServer(l *models.LSPServer) error {
-	_, err := d.Exec(`INSERT INTO lsp_servers (id, command, extensions, env, initialization, disabled)
-		VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		command=excluded.command, extensions=excluded.extensions,
-		env=excluded.env, initialization=excluded.initialization,
-		disabled=excluded.disabled`,
-		l.ID, l.Command, l.Extensions, l.Env, l.Initialization, boolToInt(l.Disabled))
+func (d *DB) UpdateSourceItemStatus(id, status string) error {
+	_, err := d.Exec(`UPDATE source_items SET status=? WHERE id=?`, status, id)
 	return err
 }
 
+func (d *DB) UpdateSourceItemTarget(id, targetPath string) error {
+	_, err := d.Exec(`UPDATE source_items SET target_path=? WHERE id=?`, targetPath, id)
+	return err
+}
+
+func (d *DB) ListSourceItemsBySource(sourceID string) ([]models.SourceItem, error) {
+	rows, err := d.Query(`SELECT id, COALESCE(source_id,''), COALESCE(type,''), COALESCE(source_path,''), COALESCE(target_path,''), COALESCE(hash,''), COALESCE(status,'active') FROM source_items WHERE source_id=? ORDER BY id`, sourceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.SourceItem
+	for rows.Next() {
+		var s models.SourceItem
+		if err := rows.Scan(&s.ID, &s.SourceID, &s.Type, &s.SourcePath, &s.TargetPath, &s.Hash, &s.Status); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+func (d *DB) UpsertLSPServer(l *models.LSPServer) error {
+	return d.upsertRow("lsp_servers", "id", []upsertCol{
+		{"id", l.ID},
+		{"command", l.Command},
+		{"extensions", l.Extensions},
+		{"env", l.Env},
+		{"initialization", l.Initialization},
+		{"disabled", boolToInt(l.Disabled)},
+	})
+}
+
+// kept manual: upsertRow can't handle datetime('now') expressions
 func (d *DB) UpsertConfigFragment(f *models.ConfigFragment) error {
 	_, err := d.Exec(`INSERT INTO config_fragments (id, config_type, content, source, hash, updated_at)
 		VALUES (?, ?, ?, ?, ?, datetime('now'))
@@ -221,14 +323,15 @@ func (d *DB) DeleteLSPServer(id string) error {
 }
 
 func (d *DB) UpsertModelProfile(p *models.ModelProfile) error {
-	_, err := d.Exec(`INSERT INTO model_profiles (model_id, real_context, max_output, supports_stream, supports_so, stream_tps, profiled_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(model_id) DO UPDATE SET
-		real_context=excluded.real_context, max_output=excluded.max_output,
-		supports_stream=excluded.supports_stream, supports_so=excluded.supports_so,
-		stream_tps=excluded.stream_tps, profiled_at=excluded.profiled_at`,
-		p.ModelID, p.RealContext, p.MaxOutput, boolToInt(p.SupportsStream), boolToInt(p.SupportsSO), p.StreamTPS, p.ProfiledAt)
-	return err
+	return d.upsertRow("model_profiles", "model_id", []upsertCol{
+		{"model_id", p.ModelID},
+		{"real_context", p.RealContext},
+		{"max_output", p.MaxOutput},
+		{"supports_stream", boolToInt(p.SupportsStream)},
+		{"supports_so", boolToInt(p.SupportsSO)},
+		{"stream_tps", p.StreamTPS},
+		{"profiled_at", p.ProfiledAt},
+	})
 }
 
 func (d *DB) ListModelProfiles() ([]models.ModelProfile, error) {
@@ -265,13 +368,14 @@ func (d *DB) GetModelProfile(modelID string) (*models.ModelProfile, error) {
 }
 
 func (d *DB) UpsertSource(src *models.Source) error {
-	_, err := d.Exec(`INSERT INTO sources (id, remote_url, local_path, "commit", status, last_synced)
-		VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		remote_url=excluded.remote_url, local_path=excluded.local_path,
-		"commit"=excluded."commit", status=excluded.status, last_synced=excluded.last_synced`,
-		src.ID, src.RemoteURL, src.LocalPath, src.Commit, src.Status, src.LastSynced)
-	return err
+	return d.upsertRow("sources", "id", []upsertCol{
+		{"id", src.ID},
+		{"remote_url", src.RemoteURL},
+		{"local_path", src.LocalPath},
+		{`"commit"`, src.Commit},
+		{"status", src.Status},
+		{"last_synced", src.LastSynced},
+	})
 }
 
 func (d *DB) ListSources() ([]models.Source, error) {
@@ -289,4 +393,27 @@ func (d *DB) ListSources() ([]models.Source, error) {
 		out = append(out, s)
 	}
 	return out, nil
+}
+
+func (d *DB) GetSource(id string) (*models.Source, error) {
+	row := d.QueryRow(`SELECT id, remote_url, local_path, "commit", status, last_synced FROM sources WHERE id=?`, id)
+	var s models.Source
+	err := row.Scan(&s.ID, &s.RemoteURL, &s.LocalPath, &s.Commit, &s.Status, &s.LastSynced)
+	if err != nil {
+		return nil, fmt.Errorf("source %q not found: %w", id, err)
+	}
+	return &s, nil
+}
+
+func (d *DB) DeleteSource(id string) error {
+	_, err := d.Exec(`DELETE FROM sources WHERE id=?`, id)
+	if err != nil {
+		return fmt.Errorf("delete source %q: %w", id, err)
+	}
+	_, _ = d.Exec(`DELETE FROM source_items WHERE source_id=?`, id)
+	_, _ = d.Exec(`DELETE FROM skills WHERE source=?`, id)
+	_, _ = d.Exec(`DELETE FROM agents WHERE source=?`, id)
+	_, _ = d.Exec(`DELETE FROM commands WHERE source=?`, id)
+	_, _ = d.Exec(`DELETE FROM mcp_servers WHERE source=?`, id)
+	return nil
 }

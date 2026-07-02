@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 const defaultContextWindow = 128000

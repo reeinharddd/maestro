@@ -100,7 +100,7 @@ No hardcoded key list — adapts to your actual configuration.`,
 				fmt.Println("=== API Key Check ===")
 				fmt.Println()
 				fmt.Println("  No keys found to check.")
-				fmt.Println("  Use 'okit keys set KEY_NAME VALUE' to add keys.")
+				fmt.Println("  Use 'maestro keys set KEY_NAME VALUE' to add keys.")
 				return nil
 			}
 
@@ -189,7 +189,7 @@ func newKeysSetCmd() *cobra.Command {
 Security: File is written with 0600 permissions so only the owner can read.
 
 Example:
-  okit keys set MISTRAL_API_KEY "my-api-key-value"`,
+  maestro keys set MISTRAL_API_KEY "my-api-key-value"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := strings.TrimSpace(args[0])
 			value := strings.TrimSpace(args[1])
@@ -232,7 +232,7 @@ func newKeysRemoveCmd() *cobra.Command {
 		Long: `Remove a key from opencode.env.
 
 Example:
-  okit keys remove OLD_API_KEY`,
+  maestro keys remove OLD_API_KEY`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := args[0]
 			envPath := envFilePath()

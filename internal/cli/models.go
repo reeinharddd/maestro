@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/classifier"
 )
 
 func newModelsCmdImpl(dbPath *string) *cobra.Command {
@@ -23,6 +24,7 @@ Auto-syncs to opencode config on every change.`,
 	cmd.AddCommand(newModelUpdateCmd(dbPath))
 	cmd.AddCommand(newModelRemoveCmd(dbPath))
 	cmd.AddCommand(newModelInfoCmd(dbPath))
+	cmd.AddCommand(newModelClassifyCmd(dbPath))
 
 	// Shared flags for add/update
 	addUpdateFlags := []struct {
@@ -162,7 +164,7 @@ func newModelAddCmd(dbPath *string) *cobra.Command {
 Auto-syncs to opencode config.
 
 Example:
-  okit models add --id my-provider/my-model --provider-id my-provider --context 128000 --function-calling`,
+  maestro models add --id my-provider/my-model --provider-id my-provider --context 128000 --function-calling`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			provID, _ := cmd.Flags().GetString("provider-id")
@@ -205,7 +207,7 @@ func newModelUpdateCmd(dbPath *string) *cobra.Command {
 Auto-syncs to opencode config.
 
 Example:
-  okit models update --id groq/llama-3-70b --reasoning`,
+  maestro models update --id groq/llama-3-70b --reasoning`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			if id == "" {
@@ -245,7 +247,7 @@ func newModelRemoveCmd(dbPath *string) *cobra.Command {
 Auto-syncs to opencode config.
 
 Example:
-  okit models remove --id groq/llama-3-70b`,
+  maestro models remove --id groq/llama-3-70b`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			if id == "" {
@@ -444,4 +446,56 @@ func applyModelFlags(cmd *cobra.Command, m *models.Model) int {
 	}
 
 	return changed
+}
+
+func newModelClassifyCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "classify",
+		Short: "Classify models and populate Architecture/RecommendedUse",
+		Long: `Run the classifier on all models (or filtered by --provider) to populate
+Architecture and RecommendedUse fields based on model capabilities and known families.
+Results are upserted into the database.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			provider, _ := cmd.Flags().GetString("provider")
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			var models []models.Model
+			if provider != "" {
+				models, err = d.ListModelsByProvider(provider)
+			} else {
+				models, err = d.ListModels()
+			}
+			if err != nil {
+				return fmt.Errorf("list models: %w", err)
+			}
+
+			cls := classifier.NewService(d)
+			count := 0
+			for _, m := range models {
+				result, cErr := cls.Classify(&m)
+				if cErr != nil {
+					fmt.Printf("  Warning [%s]: classify error: %v\n", m.ID, cErr)
+					continue
+				}
+				m.Architecture = result.Architecture
+				m.RecommendedUse = result.RecommendedUse
+				if result.Tier != "" && result.Tier != "unknown" {
+					m.Tier = result.Tier
+				}
+				if err := d.UpsertModel(&m); err != nil {
+					fmt.Printf("  Warning [%s]: upsert error: %v\n", m.ID, err)
+					continue
+				}
+				count++
+			}
+			fmt.Printf("Classified %d models\n", count)
+			return nil
+		},
+	}
+	cmd.Flags().String("provider", "", "Filter by provider ID")
+	return cmd
 }

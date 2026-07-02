@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-BIN="./okit"
-DB="/tmp/opencode/okit-test-suite.db"
+BIN="./maestro"
+DB="/tmp/opencode/maestro-test-suite.db"
 PASS=0
 FAIL=0
 

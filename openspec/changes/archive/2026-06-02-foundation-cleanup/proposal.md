@@ -23,7 +23,7 @@ Fix four concrete defects: snapshot column `data`/`content` mismatch causes SQL 
 - `config-path-unification`: Make `DefaultPath()` respect `$OPENCODE_CONFIG_DIR`
 
 ### Modified Capabilities
-- `cli-commands`: Add `okit agents` subcommand (DB ops exist)
+- `cli-commands`: Add `maestro agents` subcommand (DB ops exist)
 
 ## Approach
 
@@ -66,7 +66,7 @@ None.
 ## Success Criteria
 
 - [ ] `InsertSnapshot` runs without SQL error on fresh and existing DBs
-- [ ] `OPENCODE_CONFIG_DIR=/tmp/test-config okit status` opens DB there
+- [ ] `OPENCODE_CONFIG_DIR=/tmp/test-config maestro status` opens DB there
 - [ ] `go vet ./... && go test -race ./...` passes
-- [ ] `okit agents list` returns agents from DB
+- [ ] `maestro agents list` returns agents from DB
 - [ ] `HANDOFF.md` and `STALE_TESTS.md` deleted

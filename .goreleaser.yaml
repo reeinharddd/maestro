@@ -1,0 +1,57 @@
+# .goreleaser.yaml
+# Goreleaser configuration for okit — Go CLI tool for OpenCode management.
+# Builds static binaries for Linux and Darwin, creates GitHub releases.
+# See https://goreleaser.com
+
+version: 2
+
+project_name: okit
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: okit
+    binary: okit
+    main: ./cmd/okit/
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - id: okit
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format: tar.gz
+    format_overrides:
+      - goos: darwin
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - Merge pull request
+      - Merge remote-tracking branch
+
+release:
+  github:
+    owner: reeinharrrd
+    name: okit
+  prerelease: auto

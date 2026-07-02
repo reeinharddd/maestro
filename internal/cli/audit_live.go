@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/reeinharddd/okit/internal/audit"
+	"github.com/reeinharrrd/maestro/internal/audit"
 	"github.com/spf13/cobra"
 )
 
@@ -117,7 +117,7 @@ to verify it really works (rate-limit aware, max ~$0.01 of tokens).`,
 				fmt.Printf("  %-14s  total fixed: %d, added: %d, skipped: %d\n",
 					"TOTAL:", grandPhantom, grandMissing, grandSkip)
 				fmt.Println()
-				fmt.Println("Tip: run `okit audit live --smoke` to verify the new untested models.")
+				fmt.Println("Tip: run `maestro audit live --smoke` to verify the new untested models.")
 			}
 
 			if !smoke {

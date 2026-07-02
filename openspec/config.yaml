@@ -3,8 +3,11 @@
 schema: spec-driven
 
 context: |
+  Product vision: central orchestrator for AI dev environment (docs/VISION.md)
+  Roadmap: Phase 1 (central config DB) → Phase 2 (project scanner) → Phase 3 (daemon proxy)
+  Phase 1 scope: complete CRUD all entities, model classification (provider+public), sync debug, export refinement
   Tech stack: Go 1.25.0 CLI tool, Cobra, modernc.org/sqlite, golang-migrate
-  Architecture: cmd/okit/ (main), internal/ (business logic), pkg/models/ (shared types)
+  Architecture: cmd/maestro/ (main), internal/ (business logic), pkg/models/ (shared types)
   Testing: go test ./..., go vet ./..., go test -race -coverprofile=coverage.out ./...
   Style: Table-driven tests, external test packages, interface-based mocking (no framework)
   Conventions: Conventional commits, TDD vertical slices, SQLite in-memory for tests

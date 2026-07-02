@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reeinharddd/okit/internal/generator"
-	"github.com/reeinharddd/okit/internal/util"
+	"github.com/reeinharrrd/maestro/internal/generator"
+	"github.com/reeinharrrd/maestro/internal/util"
 	"github.com/spf13/cobra"
 )
 

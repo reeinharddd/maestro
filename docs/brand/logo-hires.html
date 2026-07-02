@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maestro Logo — High Definition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;500;700&family=Instrument+Serif:ital@0;1&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d0d0f;
+    color: #e8e6e3;
+    font-family: 'Outfit', sans-serif;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .container { max-width: 1100px; width: 100%; }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 200;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #c8a064;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-family: 'Instrument Serif', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: #666;
+    margin-bottom: 48px;
+  }
+
+  .section {
+    margin-bottom: 100px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  .section-name {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .section-attitude {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: #c8a064;
+    margin-bottom: 8px;
+  }
+
+  .section-desc {
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #888;
+    margin-bottom: 32px;
+    max-width: 600px;
+  }
+
+  .hero {
+    background: #0d0d0f;
+    border: 1px solid #1a1a1e;
+    border-radius: 16px;
+    padding: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+
+  .hero svg {
+    max-width: 400px;
+    height: auto;
+  }
+
+  .variant-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .variant-card {
+    flex: 1;
+    min-width: 200px;
+    background: #0d0d0f;
+    border: 1px solid #1a1a1e;
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .variant-card svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .variant-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 12px;
+  }
+
+  .size-demo {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #1a1a1e;
+  }
+
+  .size-demo .label {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 0.1em;
+  }
+
+  .terminal-test {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: #08080a;
+    border: 1px solid #1a1a1e;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .terminal-test .prompt { color: #555; }
+  .terminal-test .maestro-text { color: #c8a064; font-weight: 500; }
+
+  .two-up {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+
+  @media (max-width: 700px) {
+    .two-up { grid-template-columns: 1fr; }
+    .hero { padding: 24px; }
+    .hero svg { max-width: 280px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Maestro</h1>
+<div class="subtitle">Logo Mark · High Definition</div>
+
+<!-- ============ DOWNBEAT ============ -->
+<div class="section">
+  <div class="section-title">Concept 01</div>
+  <div class="section-name">The Downbeat</div>
+  <div class="section-attitude">"The moment the orchestra snaps to attention"</div>
+  <div class="section-desc">
+    The conductor's most decisive gesture. This version adds depth through layered strokes, impact rings with decay, subtle light rays, and a metallic graduated finish. The impact point sits off-center for tension — the silence AFTER the stroke.
+  </div>
+
+  <div class="hero">
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Metallic gold gradient for baton -->
+        <linearGradient id="db-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f2e6c9"/>
+          <stop offset="15%" stop-color="#e8d5a3"/>
+          <stop offset="40%" stop-color="#c8a064"/>
+          <stop offset="65%" stop-color="#b8913e"/>
+          <stop offset="85%" stop-color="#a88844"/>
+          <stop offset="100%" stop-color="#8a6a30"/>
+        </linearGradient>
+
+        <!-- Impact glow -->
+        <radialGradient id="impact-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#c8a064" stop-opacity="0.6"/>
+          <stop offset="30%" stop-color="#c8a064" stop-opacity="0.2"/>
+          <stop offset="60%" stop-color="#c8a064" stop-opacity="0.06"/>
+          <stop offset="100%" stop-color="#c8a064" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Subtle light rays -->
+        <linearGradient id="ray-top" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stop-color="#c8a064" stop-opacity="0.04"/>
+          <stop offset="100%" stop-color="#c8a064" stop-opacity="0"/>
+        </linearGradient>
+
+        <!-- Filter: soft glow -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+          <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.78 0 0 0 0 0.63 0 0 0 0 0.39 0 0 0 0.3 0" result="glowColor"/>
+          <feMerge>
+            <feMergeNode in="glowColor"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+
+        <!-- Larger glow for impact ring -->
+        <filter id="big-glow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="6"/>
+        </filter>
+      </defs>
+
+      <!-- Dark stage background -->
+      <rect x="40" y="80" width="320" height="240" rx="12" fill="#111114" stroke="#1a1a1e" stroke-width="0.5"/>
+
+      <!-- Faint energy field / atmosphere -->
+      <ellipse cx="200" cy="200" rx="160" ry="120" fill="url(#impact-glow)" opacity="0.15"/>
+
+      <!-- Impact rings (concentric, decaying) -->
+      <circle cx="148" cy="282" r="12" fill="none" stroke="#c8a064" stroke-width="0.5" opacity="0.15"/>
+      <circle cx="148" cy="282" r="24" fill="none" stroke="#c8a064" stroke-width="0.4" opacity="0.08"/>
+      <circle cx="148" cy="282" r="40" fill="none" stroke="#c8a064" stroke-width="0.3" opacity="0.04"/>
+      <circle cx="148" cy="282" r="60" fill="none" stroke="#c8a064" stroke-width="0.2" opacity="0.02"/>
+
+      <!-- Light rays from impact (subtle) -->
+      <line x1="148" y1="282" x2="88" y2="208" stroke="#c8a064" stroke-width="0.5" opacity="0.04"/>
+      <line x1="148" y1="282" x2="208" y2="208" stroke="#c8a064" stroke-width="0.5" opacity="0.03"/>
+      <line x1="148" y1="282" x2="60" y2="282" stroke="#c8a064" stroke-width="0.5" opacity="0.03"/>
+      <line x1="148" y1="282" x2="148" y2="338" stroke="#c8a064" stroke-width="0.5" opacity="0.04"/>
+
+      <!-- The baton stroke - bold 65° diagonal with metallic finish -->
+      <line x1="278" y1="100" x2="148" y2="282" stroke="url(#db-gold)" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>
+
+      <!-- Secondary highlight stroke (offset, thinner) -->
+      <line x1="275" y1="98" x2="147" y2="280" stroke="#f2e6c9" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+
+      <!-- Impact point - weighted tip -->
+      <circle cx="148" cy="282" r="9" fill="#c8a064" filter="url(#glow)"/>
+      <circle cx="148" cy="282" r="5" fill="#e8d5a3"/>
+      <circle cx="147" cy="281" r="2" fill="#f2e6c9" opacity="0.6"/>
+
+      <!-- Impact flash - small burst -->
+      <path d="M148 274 L144 268 L148 270 L152 268 Z" fill="#e8d5a3" opacity="0.15"/>
+      <path d="M140 282 L134 280 L138 284 L134 288 Z" fill="#e8d5a3" opacity="0.1"/>
+      <path d="M156 282 L162 280 L158 284 L162 288 Z" fill="#e8d5a3" opacity="0.1"/>
+
+      <!-- Faint vertical emphasis line (the "snap to attention" feeling) -->
+      <line x1="200" y1="96" x2="200" y2="136" stroke="#c8a064" stroke-width="0.5" opacity="0.06"/>
+
+      <!-- Metallic baton counterweight/handle hint at top -->
+      <rect x="264" y="88" width="28" height="10" rx="3" fill="#1a1a1e" stroke="#c8a064" stroke-width="0.6" opacity="0.3"/>
+    </svg>
+  </div>
+
+  <div class="variant-row">
+    <div class="variant-card">
+      <div class="variant-label">Light Background</div>
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="200" fill="#e8e6e3" rx="8"/>
+        <defs>
+          <linearGradient id="db-l" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a1a1e"/>
+            <stop offset="100%" stop-color="#3a3a3e"/>
+          </linearGradient>
+        </defs>
+        <line x1="140" y1="48" x2="72" y2="144" stroke="url(#db-l)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="72" cy="144" r="7" fill="#c8a064"/>
+        <circle cx="72" cy="144" r="14" fill="none" stroke="#c8a064" stroke-width="0.5" opacity="0.2"/>
+        <circle cx="72" cy="144" r="24" fill="none" stroke="#c8a064" stroke-width="0.3" opacity="0.1"/>
+      </svg>
+    </div>
+    <div class="variant-card">
+      <div class="variant-label">Monochrome</div>
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <line x1="140" y1="48" x2="72" y2="144" stroke="#e8e6e3" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="72" cy="144" r="7" fill="#e8e6e3"/>
+        <circle cx="72" cy="144" r="14" fill="none" stroke="#e8e6e3" stroke-width="0.5" opacity="0.2"/>
+      </svg>
+    </div>
+    <div class="variant-card">
+      <div class="variant-label">Terminal (32×32)</div>
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <!-- Optimized for terminal: thick enough to read at 32px -->
+        <line x1="24" y1="4" x2="8" y2="24" stroke="#c8a064" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="8" cy="24" r="3" fill="#c8a064"/>
+        <!-- Terminal prompt simulation -->
+      </svg>
+      <div style="margin-top:8px;font-size:11px;color:#666;font-family:'SF Mono','JetBrains Mono',monospace;">
+        $ maestro &nbsp; <span style="color:#c8a064;">↓</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ARENA ============ -->
+<div class="section">
+  <div class="section-title">Concept 02</div>
+  <div class="section-name">The Arena</div>
+  <div class="section-attitude">"The stage is his. The orchestra is his."</div>
+  <div class="section-desc">
+    The conductor from behind, facing the orchestra — the iconic "this is my domain" perspective. This HD version adds a properly proportioned figure, radiating energy lines from the center, a stage horizon, and atmospheric depth. The baton cuts across the right side as the focal point.
+  </div>
+
+  <div class="hero">
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ar-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f2e6c9"/>
+          <stop offset="30%" stop-color="#e8d5a3"/>
+          <stop offset="60%" stop-color="#c8a064"/>
+          <stop offset="100%" stop-color="#a88844"/>
+        </linearGradient>
+
+        <linearGradient id="ar-body" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#c8a064" stop-opacity="0.8"/>
+          <stop offset="50%" stop-color="#c8a064" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#c8a064" stop-opacity="0.1"/>
+        </linearGradient>
+
+        <!-- Atmospheric radial gradient -->
+        <radialGradient id="atmosphere" cx="50%" cy="60%" r="50%">
+          <stop offset="0%" stop-color="#c8a064" stop-opacity="0.08"/>
+          <stop offset="50%" stop-color="#c8a064" stop-opacity="0.02"/>
+          <stop offset="100%" stop-color="#c8a064" stop-opacity="0"/>
+        </radialGradient>
+
+        <!-- Baton tip glow -->
+        <filter id="tip-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.5"/>
+        </filter>
+
+        <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+        </filter>
+      </defs>
+
+      <!-- Dark stage area -->
+      <rect x="20" y="60" width="360" height="310" rx="16" fill="#111114" stroke="#1a1a1e" stroke-width="0.5"/>
+
+      <!-- Atmospheric glow -->
+      <circle cx="200" cy="230" r="180" fill="url(#atmosphere)"/>
+
+      <!-- Stage horizon line (the amphitheater) -->
+      <path d="M60 290 Q200 298 340 290" fill="none" stroke="#c8a064" stroke-width="0.6" opacity="0.15"/>
+      <path d="M80 298 Q200 306 320 298" fill="none" stroke="#c8a064" stroke-width="0.3" opacity="0.08"/>
+
+      <!-- Radiating energy lines from center -->
+      <line x1="200" y1="240" x2="200" y2="350" stroke="#c8a064" stroke-width="0.5" opacity="0.06"/>
+      <line x1="200" y1="240" x2="100" y2="330" stroke="#c8a064" stroke-width="0.4" opacity="0.04"/>
+      <line x1="200" y1="240" x2="300" y2="330" stroke="#c8a064" stroke-width="0.4" opacity="0.04"/>
+      <line x1="200" y1="240" x2="60" y2="280" stroke="#c8a064" stroke-width="0.3" opacity="0.03"/>
+      <line x1="200" y1="240" x2="340" y2="280" stroke="#c8a064" stroke-width="0.3" opacity="0.03"/>
+
+      <!-- ======== CONDUCTOR FIGURE ======== -->
+
+      <!-- Legs - wide grounded stance -->
+      <path d="M180 260 L176 300 L166 310" fill="none" stroke="url(#ar-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M220 260 L224 300 L234 310" fill="none" stroke="url(#ar-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Torso - tailcoat shape -->
+      <path d="M180 260 Q178 220 200 200 Q222 220 220 260 L180 260Z" fill="none" stroke="url(#ar-gold)" stroke-width="2"/>
+      <!-- Tailcoat suggestion - flared at hips -->
+      <path d="M180 260 Q168 264 160 268" fill="none" stroke="url(#ar-gold)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+      <path d="M220 260 Q232 264 240 268" fill="none" stroke="url(#ar-gold)" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- Neck -->
+      <line x1="200" y1="200" x2="200" y2="190" stroke="url(#ar-gold)" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Head -->
+      <ellipse cx="200" cy="180" rx="14" ry="18" fill="none" stroke="url(#ar-gold)" stroke-width="2"/>
+      <!-- Hair suggestion -->
+      <path d="M190 172 Q200 162 210 172" fill="none" stroke="url(#ar-gold)" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- Left arm - extended wide, commanding -->
+      <path d="M185 220 Q158 222 132 212 Q118 206 108 208" fill="none" stroke="url(#ar-gold)" stroke-width="2" stroke-linecap="round"/>
+      <!-- Left hand open gesture -->
+      <path d="M108 208 Q105 204 108 200" fill="none" stroke="url(#ar-gold)" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M108 208 Q112 212 108 216" fill="none" stroke="url(#ar-gold)" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- Right arm - driving the baton -->
+      <path d="M215 220 Q242 218 258 204 Q270 196 278 190" fill="none" stroke="url(#ar-gold)" stroke-width="2" stroke-linecap="round"/>
+      <!-- Right hand grip -->
+      <circle cx="278" cy="188" r="4" fill="none" stroke="url(#ar-gold)" stroke-width="1.5"/>
+
+      <!-- The baton - extended from right hand, bold diagonal -->
+      <line x1="278" y1="188" x2="335" y2="128" stroke="url(#ar-gold)" stroke-width="3.5" stroke-linecap="round"/>
+
+      <!-- Baton tip highlight (the focal point) -->
+      <circle cx="335" cy="128" r="3" fill="#e8d5a3" filter="url(#tip-glow)"/>
+      <circle cx="335" cy="128" r="1.5" fill="#f2e6c9"/>
+
+      <!-- Baton trail/energy at tip -->
+      <circle cx="340" cy="123" r="8" fill="none" stroke="#c8a064" stroke-width="0.5" opacity="0.1"/>
+      <circle cx="344" cy="118" r="12" fill="none" stroke="#c8a064" stroke-width="0.3" opacity="0.05"/>
+
+      <!-- Subtle frame arc (the "arena" boundary) -->
+      <path d="M70 310 Q70 110 200 86 Q330 110 330 310" fill="none" stroke="#c8a064" stroke-width="0.3" opacity="0.06"/>
+    </svg>
+  </div>
+
+  <div class="variant-row">
+    <div class="variant-card">
+      <div class="variant-label">Light Background</div>
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="200" fill="#e8e6e3" rx="8"/>
+        <path d="M50 120 L44 150 L38 158" fill="none" stroke="#1a1a1e" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M150 120 L156 150 L162 158" fill="none" stroke="#1a1a1e" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M88 130 Q84 108 100 90 Q116 108 112 130 L88 130Z" fill="none" stroke="#1a1a1e" stroke-width="1.5"/>
+        <circle cx="100" cy="82" r="10" fill="none" stroke="#1a1a1e" stroke-width="1.5"/>
+        <path d="M92 106 Q80 108 64 106" fill="none" stroke="#1a1a1e" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M108 106 Q120 104 132 96" fill="none" stroke="#1a1a1e" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="132" cy="96" r="3" fill="none" stroke="#1a1a1e" stroke-width="1"/>
+        <line x1="132" y1="96" x2="157" y2="68" stroke="#c8a064" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="157" cy="68" r="2" fill="#c8a064"/>
+      </svg>
+    </div>
+    <div class="variant-card">
+      <div class="variant-label">Monochrome</div>
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 120 L44 150 L38 158" fill="none" stroke="#e8e6e3" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M150 120 L156 150 L162 158" fill="none" stroke="#e8e6e3" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M88 130 Q84 108 100 90 Q116 108 112 130 L88 130Z" fill="none" stroke="#e8e6e3" stroke-width="1.5"/>
+        <circle cx="100" cy="82" r="10" fill="none" stroke="#e8e6e3" stroke-width="1.5"/>
+        <path d="M92 106 Q80 108 64 106" fill="none" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M108 106 Q120 104 132 96" fill="none" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="132" cy="96" r="3" fill="none" stroke="#e8e6e3" stroke-width="1"/>
+        <line x1="132" y1="96" x2="157" y2="68" stroke="#e8e6e3" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="157" cy="68" r="2" fill="#e8e6e3"/>
+      </svg>
+    </div>
+    <div class="variant-card">
+      <div class="variant-label">Terminal (32×32)</div>
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22 L11 25 L9 26" fill="none" stroke="#c8a064" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M20 22 L21 25 L23 26" fill="none" stroke="#c8a064" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M13 22 Q13 18 16 16 Q19 18 19 22 L13 22Z" fill="none" stroke="#c8a064" stroke-width="1.2"/>
+        <circle cx="16" cy="14" r="3" fill="none" stroke="#c8a064" stroke-width="1.2"/>
+        <path d="M14 18 Q12 18 10 17" fill="none" stroke="#c8a064" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M18 18 Q20 17 22 15" fill="none" stroke="#c8a064" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="22" y1="15" x2="27" y2="10" stroke="#c8a064" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <div style="margin-top:8px;font-size:11px;color:#666;font-family:'SF Mono','JetBrains Mono',monospace;">
+        $ maestro &nbsp; <span style="color:#c8a064;">|&gt;</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TERMINAL PREVIEW ============ -->
+<div class="section">
+  <div class="section-title">Terminal Application</div>
+  <div class="section-name">$ maestro</div>
+  <div class="section-attitude">"The prompt you don't ignore"</div>
+  <div class="section-desc">
+    How the mark reads inside a CLI. The baton symbol sits at the prompt as a calm marker of authority.
+  </div>
+
+  <div style="background:#08080a; border:1px solid #1a1a1e; border-radius:12px; padding:24px 28px; font-family:'SF Mono','Cascadia Code','JetBrains Mono',monospace; font-size:13px; line-height:1.8;">
+    <div><span style="color:#555;">~/projects</span> <span style="color:#444;">$</span> <span style="color:#c8a064;">maestro</span> <span style="color:#666;">--help</span></div>
+    <div><span style="color:#c8a064; font-weight:500;">  ↓</span> <span style="color:#e8e6e3;">OpenCode config orchestrator</span></div>
+    <div style="margin-top:12px;">
+      <span style="color:#555;">Usage:</span>
+      <span style="color:#e8e6e3;">  maestro [command]</span>
+    </div>
+    <div style="margin-top:8px;">
+      <span style="color:#555;">Available Commands:</span><br>
+      <span style="color:#c8a064;">  ↓</span> <span style="color:#e8e6e3;">  sync      Sync config to remote</span><br>
+      <span style="color:#c8a064;">  ↓</span> <span style="color:#e8e6e3;">  heal      Auto-repair stale config</span><br>
+      <span style="color:#c8a064;">  ↓</span> <span style="color:#e8e6e3;">  route     Route model requests</span><br>
+      <span style="color:#c8a064;">  ↓</span> <span style="color:#e8e6e3;">  audit     Benchmark models</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid #1a1a1e; text-align: center;">
+  <p style="color: #555; font-size: 11px; letter-spacing: 0.05em;">
+    Maestro · Brand Identity &mdash; Gold #c8a064 · Ebony #0d0d0f · Charcoal #1a1a1e · Ivory #e8e6e3
+  </p>
+</div>
+
+</div>
+</body>
+</html>

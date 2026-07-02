@@ -12,8 +12,8 @@ esac
 
 # Detect OpenCode installation
 OPENCODE_INSTALLATION=""
-if [ -d "~/.config/opencode" ]; then
-	OPENCODE_INSTALLATION="~/.config/opencode"
+if [ -d "$HOME/.config/opencode" ]; then
+	OPENCODE_INSTALLATION="$HOME/.config/opencode"
 elif command -v opencode &> /dev/null; then
 	OPENCODE_INSTALLATION="$(which opencode)"
 elif npm list -g opencode &> /dev/null; then
@@ -32,10 +32,10 @@ fi
 # Build the Go binary or download pre-built
 if [ "$OS" = "Linux" ] || [ "$OS" = "Darwin" ]; then
 	if command -v go &> /dev/null; then
-		go build -o "$INSTALL_PATH/opencode-kit" github.com/reeinharddd/okit/cmd/opencode-kit
+		go build -o "$INSTALL_PATH/maestro" ./cmd/maestro
 	else
-		curl -L https://github.com/reeinharddd/okit/releases/latest/download/opencode-kit-$OS -o "$INSTALL_PATH/opencode-kit"
-		chmod +x "$INSTALL_PATH/opencode-kit"
+		curl -L https://github.com/reeinharrrd/maestro/releases/latest/download/maestro-$OS -o "$INSTALL_PATH/maestro"
+		chmod +x "$INSTALL_PATH/maestro"
 	fi
 else
 	echo "Unsupported OS: $OS"
@@ -43,8 +43,8 @@ else
 fi
 
 # Initialize SQLite database
-if [ ! -f "$INSTALL_PATH/opencode-kit.db" ]; then
-	"$INSTALL_PATH/opencode-kit" init-db
+if [ ! -f "$INSTALL_PATH/maestro.db" ]; then
+	"$INSTALL_PATH/maestro" init-db
 fi
 
 # Detect environment variables for API keys
@@ -59,11 +59,11 @@ for key in "${API_KEYS[@]}"; do
 	done
 
 # Seed known providers into DB
-"$INSTALL_PATH/opencode-kit" seed-providers
+"$INSTALL_PATH/maestro" seed-providers
 
 # Run initial discovery (if API keys found)
 if [ -n "$GROQ_API_KEY" ] || [ -n "$MISTRAL_API_KEY" ] || [ -n "$OPENAI_API_KEY" ] || [ -n "$ANTHROPIC_API_KEY" ] || [ -n "$COHERE_API_KEY" ] || [ -n "$CEREBRAS_API_KEY" ] || [ -n "$GOOGLE_API_KEY" ] || [ -n "$NVIDIA_API_KEY" ] || [ -n "$OPENROUTER_API_KEY" ]; then
-	"$INSTALL_PATH/opencode-kit" discover
+	"$INSTALL_PATH/maestro" discover
 fi
 
 # Generate initial config
@@ -89,6 +89,6 @@ fi
 echo "Installation completed successfully."
 echo "Next steps:"
 echo "1. Add API keys to $INSTALL_PATH/config.json"
-echo "2. Run '$INSTALL_PATH/opencode-kit discover' to discover models"
-echo "3. Run '$INSTALL_PATH/opencode-kit heal' to check for issues and fix them"
-echo "4. Run '$INSTALL_PATH/opencode-kit' to start the opencode-kit service"
+echo "2. Run '$INSTALL_PATH/maestro discover' to discover models"
+echo "3. Run '$INSTALL_PATH/maestro heal' to check for issues and fix them"
+echo "4. Run '$INSTALL_PATH/maestro' to start the maestro service"

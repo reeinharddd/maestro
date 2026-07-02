@@ -1,14 +1,9 @@
-// Package db provides database operations for okit.
-//
-// Copyright 2026 OpenCode Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 package db
 
 import (
 	"context"
 	"database/sql"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 // DBInterface defines the interface for database operations.
@@ -26,23 +21,39 @@ type DBInterface interface {
 	GetModel(id string) (*models.Model, error)
 	DeleteModel(id string) error
 
+	// Model search & stats
+	SearchModels(query string) ([]models.Model, error)
+	GetStats() (map[string]int, error)
+
 	// Command operations
 	UpsertCommand(c *models.Command) error
 	ListCommands() ([]models.Command, error)
+
+	DeleteCommand(id string) error
 
 	// MCP operations
 	UpsertMCP(m *models.MCPServer) error
 	ListMCPs() ([]models.MCPServer, error)
 
+	DeleteMCP(id string) error
+
 	// Skill operations
 	UpsertSkill(s *models.Skill) error
 	ListSkills() ([]models.Skill, error)
+
+	UpdateSkillMeta(id string, updates map[string]any) error
+	SearchSkills(query string) ([]models.Skill, error)
+	DeleteSkill(id string) error
 
 	// Source operations
 	UpsertSourceItem(s *models.SourceItem) error
 	ListSourceItems() ([]models.SourceItem, error)
 	GetSourceItem(id string) (*models.SourceItem, error)
 	DeleteSourceItem(id string) error
+	// Source item status tracking
+	ListSourceItemsBySource(sourceID string) ([]models.SourceItem, error)
+	UpdateSourceItemStatus(id, status string) error
+	UpdateSourceItemTarget(id, targetPath string) error
 
 	// LSP operations
 	UpsertLSPServer(l *models.LSPServer) error
@@ -62,21 +73,46 @@ type DBInterface interface {
 
 	// Source registry operations
 	UpsertSource(src *models.Source) error
+	GetSource(id string) (*models.Source, error)
 	ListSources() ([]models.Source, error)
-
-	// Agent operations
+	DeleteSource(id string) error
 	UpsertAgent(a *models.Agent) error
 	ListAgents() ([]models.Agent, error)
+
+	GetAgent(id string) (*models.Agent, error)
+	DeleteAgent(id string) error
 
 	// Routing operations
 	InsertRoutingEvent(e *models.RoutingEvent) error
 	ListRoutingRules() ([]models.RoutingRule, error)
 	UpsertRoutingRule(r *models.RoutingRule) error
 	GetBudget() (*models.BudgetConfig, error)
-
+	GetRoutingRule(key string) (*models.RoutingRule, error)
+	DeleteRoutingRule(key string) error
+	ListRoutingEvents(limit int) ([]models.RoutingEvent, error)
+	UpsertBudget(b *models.BudgetConfig) error
 	// Preference operations
 	SetPreference(key, value string) error
 	ListPreferences() (map[string]string, error)
+
+	GetPreference(key string) (string, error)
+	DeletePreference(key string) error
+	CleanupProviderPrefs() (int, error)
+	CleanupInvalidPreferences() (int, error)
+
+	// Sync log operations
+	InsertSyncLog(phase, status, details string, durationMs int64) error
+	ListSyncLogs(limit int) ([]models.SyncLog, error)
+
+	// Exec log operations
+	InsertExecLog(l *models.ExecLog) error
+	ListExecLogs(limit int) ([]models.ExecLog, error)
+
+	// Snapshot operations
+	InsertSnapshot(hash, content string) error
+	ListSnapshots(limit int) ([]models.Snapshot, error)
+	GetSnapshot(id int64) (*models.Snapshot, error)
+	DeleteSnapshot(id int64) error
 
 	// Raw query operations (for heal/migration)
 	Query(query string, args ...any) (*sql.Rows, error)
@@ -84,6 +120,24 @@ type DBInterface interface {
 
 	// Small fast models for classification
 	GetSmallFastModels(ctx context.Context) ([]models.Model, error)
+
+
+	// Project operations
+	UpsertProject(p *models.Project) error
+	ListProjects() ([]models.Project, error)
+	GetProject(id string) (*models.Project, error)
+	DeleteProject(id string) error
+
+	// DetectedStack operations
+	UpsertDetectedStack(d *models.DetectedStack) error
+	ListDetectedStacks(projectID string) ([]models.DetectedStack, error)
+	DeleteDetectedStacks(projectID string) error
+
+	// ProjectConfig operations
+	UpsertProjectConfig(p *models.ProjectConfig) error
+	ListProjectConfigs(projectID string) ([]models.ProjectConfig, error)
+	GetProjectConfig(projectID, configType string) (*models.ProjectConfig, error)
+	DeleteProjectConfigs(projectID string) error
 
 	// DB path
 	DBPath() string

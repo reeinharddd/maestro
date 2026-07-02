@@ -1,9 +1,9 @@
-## Exploration: Foundation Phase — okit Codebase Assessment
+## Exploration: Foundation Phase — maestro Codebase Assessment
 
 ### Current State
-The okit codebase at `/home/erik/projects/okit` is a Go CLI tool managing OpenCode configuration (cobra + SQLite + concurrent API calls). The HANDOFF.md describes 7 Foundation Phase items, but the **codebase is significantly ahead of the HANDOFF document** — most items are already implemented.
+The maestro codebase at `/home/erik/projects/maestro` is a Go CLI tool managing OpenCode configuration (cobra + SQLite + concurrent API calls). The HANDOFF.md describes 7 Foundation Phase items, but the **codebase is significantly ahead of the HANDOFF document** — most items are already implemented.
 
-**Module**: `github.com/reeinharddd/okit` (module name contains the old username)
+**Module**: `github.com/reeinharrrd/maestro` (module name contains the old username)
 
 ---
 
@@ -142,14 +142,14 @@ HANDOFF lists 8 tables without CLI coverage. Current code covers ALL of them:
 
 | Table | CLI Command | File | Commands |
 |-------|------------|------|----------|
-| budget_config | `okit budget` | `budget.go` | `show`, `set` |
-| lsp_servers | `okit lsp` | `lsp.go` | `list` |
-| snapshots | `okit snapshots` | `snapshots.go` | `list`, `show`, `delete` |
-| preferences | `okit prefs` | `prefs.go` | `list`, `get`, `set`, `delete` |
-| skills | `okit skills` | `skills_cli.go` | `list`, `report`, `sync` |
-| source_items | `okit source-items` | `sourceitems.go` | `list`, `import`, `report` |
-| exec_log | `okit exec-log` | `exec.go` | `list` |
-| model_profiles | `okit profiles` | `profiles_cli.go` | `list` |
+| budget_config | `maestro budget` | `budget.go` | `show`, `set` |
+| lsp_servers | `maestro lsp` | `lsp.go` | `list` |
+| snapshots | `maestro snapshots` | `snapshots.go` | `list`, `show`, `delete` |
+| preferences | `maestro prefs` | `prefs.go` | `list`, `get`, `set`, `delete` |
+| skills | `maestro skills` | `skills_cli.go` | `list`, `report`, `sync` |
+| source_items | `maestro source-items` | `sourceitems.go` | `list`, `import`, `report` |
+| exec_log | `maestro exec-log` | `exec.go` | `list` |
+| model_profiles | `maestro profiles` | `profiles_cli.go` | `list` |
 
 All are registered in `root.go` lines 53-81.
 
@@ -168,7 +168,7 @@ if err := s.db.UpsertModelProfile(prof); err != nil {
 }
 ```
 
-Both `ProfileModel()` (single model) and `ProfileAll()` (all models) persist profiles. The CLI can read them back via `okit profiles list`.
+Both `ProfileModel()` (single model) and `ProfileAll()` (all models) persist profiles. The CLI can read them back via `maestro profiles list`.
 
 ---
 
@@ -182,9 +182,9 @@ Both `ProfileModel()` (single model) and `ProfileAll()` (all models) persist pro
 
 ### (i) Module Name
 
-- Module: `github.com/reeinharddd/okit` (typo: `reeinharddd` with 3 d's)
+- Module: `github.com/reeinharrrd/maestro` (typo: `reeinharrrd` with 3 d's)
 - Current user is `erik` at `/home/erik/` — the module name doesn't match the actual GitHub org/user
-- All imports reference `github.com/reeinharddd/okit/...`
+- All imports reference `github.com/reeinharrrd/maestro/...`
 
 ---
 
@@ -216,7 +216,7 @@ D. Clean up STALE_TESTS.md ─ depends on verifying tests pass
 
 3. **No agents CLI** — the `agents` table has full CRUD operations in `db/agents.go` but no way to manage agents from the CLI. Only accessible via `sync import`.
 
-4. **Module name mismatch** — `github.com/reeinharddd/okit` won't match actual deployments. This affects `go install` and any future CI/CD.
+4. **Module name mismatch** — `github.com/reeinharrrd/maestro` won't match actual deployments. This affects `go install` and any future CI/CD.
 
 5. **Test coverage gap** — zero tests for the core DB CRUD operations, routing service, backup, or healing. Only 5 test files exist, none exercise the main business logic.
 

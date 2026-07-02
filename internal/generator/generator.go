@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/internal/sync"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 const metaPrefix = "config/"
@@ -32,6 +33,13 @@ const (
 )
 
 func (s *Service) GenerateConfig() error {
+	// Capture pre-sync MCP IDs to detect DB deletions in mergeMCP
+	preSyncMCPs, _ := s.db.ListMCPs()
+	preSyncMCPIDs := make(map[string]bool, len(preSyncMCPs))
+	for _, m := range preSyncMCPs {
+		preSyncMCPIDs[m.ID] = true
+	}
+
 	if err := s.SyncExistingToDB(); err != nil {
 		fmt.Printf("  Warning: sync existing config: %v\n", err)
 	}
@@ -74,16 +82,27 @@ func (s *Service) GenerateConfig() error {
 		cfg["mcp"] = section
 	}
 
+	if section, err := s.buildLSPSection(); err == nil {
+		cfg["lsp"] = section
+	}
+
+	if section, err := s.buildPluginSection(); err == nil {
+		cfg["plugin"] = section
+	}
+
 	meta := s.buildMetaFromDB()
 	for k, v := range meta {
 		cfg[k] = v
 	}
 
-	merged := s.mergeWithExisting(cfg, s.readExistingConfig())
+	merged := s.mergeWithExisting(cfg, s.readExistingConfig(), preSyncMCPIDs)
 
 	out, err := json.MarshalIndent(merged, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)
+	}
+	if err := validateOpenCodeConfig(out); err != nil {
+		return fmt.Errorf("invalid config: %w", err)
 	}
 
 	configName := "opencode.jsonc"
@@ -99,8 +118,14 @@ func (s *Service) GenerateConfig() error {
 }
 
 func (s *Service) SyncExistingToDB() error {
-	cfg := s.readExistingConfig()
-	if cfg == nil {
+	configName := "opencode.jsonc"
+	if _, err := os.Stat(filepath.Join(s.outputDir, "opencode.json")); err == nil {
+		configName = "opencode.json"
+	}
+	path := filepath.Join(s.outputDir, configName)
+
+	cfg, err := sync.ParseOpenCodeConfig(path)
+	if err != nil {
 		return nil
 	}
 
@@ -114,204 +139,153 @@ func (s *Service) SyncExistingToDB() error {
 		}
 	}
 
-	syncAgents := func() {
-		agentSection, ok := cfg["agent"].(map[string]interface{})
-		if !ok {
-			return
+	// ── Agents ──
+	for agentID, agentCfg := range cfg.Agents {
+		model := agentCfg.Model
+		desc := agentCfg.Description
+		modeVal := agentCfg.Mode
+		if modeVal == "" {
+			modeVal = "subagent"
 		}
-		for agentID, agentVal := range agentSection {
-			agentMap, ok := agentVal.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			model, _ := agentMap["model"].(string)
-			desc, _ := agentMap["description"].(string)
-			mode, _ := agentMap["mode"].(string)
-			modeVal := mode
-			if modeVal == "" {
-				modeVal = "subagent"
-			}
-			t, _ := agentMap["temperature"].(float64)
-			color, _ := agentMap["color"].(string)
-			steps, _ := agentMap["steps"].(float64)
-			promptFile, _ := agentMap["prompt"].(string)
+		t := agentCfg.Temperature
+		color := agentCfg.Color
+		steps := agentCfg.Steps
+		promptFile := agentCfg.Prompt
 
-			var permBytes []byte
-			if perm, ok := agentMap["permission"]; ok {
-				permBytes, _ = json.Marshal(perm)
-			}
-
-			_ = s.db.UpsertAgent(&models.Agent{
-				ID:             agentID,
-				Description:    desc,
-				CurrentModelID: model,
-				Mode:           modeVal,
-				Temperature:    t,
-				Color:          color,
-				MaxSteps:       int(steps),
-				PromptFile:     promptFile,
-				Permission:     string(permBytes),
-				Source:         "opencode",
-				Status:         "active",
-			})
+		var permBytes []byte
+		if agentCfg.Permission != nil {
+			permBytes, _ = json.Marshal(agentCfg.Permission)
 		}
+
+		_ = s.db.UpsertAgent(&models.Agent{
+			ID:             agentID,
+			Description:    desc,
+			CurrentModelID: model,
+			Mode:           modeVal,
+			Temperature:    t,
+			Color:          color,
+			MaxSteps:       int(steps),
+			PromptFile:     promptFile,
+			Permission:     string(permBytes),
+			Source:         "opencode",
+			Status:         "active",
+		})
 	}
 
-	syncProviders := func() {
-		provSection, ok := cfg["provider"].(map[string]interface{})
-		if !ok {
-			return
+	// ── Providers ──
+	for provID, provCfg := range cfg.Providers {
+		p := models.Provider{
+			ID:      provID,
+			Name:    provCfg.Name,
+			Source:  "opencode",
+			Status:  "active",
+			Enabled: true,
 		}
-		for provID, provVal := range provSection {
-			provCfg, ok := provVal.(map[string]interface{})
-			if !ok {
-				continue
-			}
+		if len(provCfg.Options) > 0 {
+		if bu, _ := provCfg.Options["baseURL"].(string); bu != "" {
+			p.BaseURL = bu
+		}
+		if to, _ := provCfg.Options["timeout"].(float64); to > 0 {
+			p.TimeoutMs = int(to)
+		}
+		if hto, _ := provCfg.Options["headerTimeout"].(float64); hto > 0 {
+			p.HeaderTimeoutMs = int(hto)
+		}
+		if cto, _ := provCfg.Options["chunkTimeout"].(float64); cto > 0 {
+			p.ChunkTimeoutMs = int(cto)
+		}
+		if eu, _ := provCfg.Options["enterpriseUrl"].(string); eu != "" {
+			p.EnterpriseURL = eu
+		}
+		if sck, _ := provCfg.Options["setCacheKey"].(bool); sck {
+			p.SetCacheKey = true
+		}
+		}
 
-			// Read config entry
-			name, _ := provCfg["name"].(string)
-			p := models.Provider{
-				ID:       provID,
-				Name:     name,
-				Source:   "opencode",
-				Status:   "active",
-				Enabled:  true,
-			}
-			if opts, ok := provCfg["options"].(map[string]interface{}); ok {
-				if bu, _ := opts["baseURL"].(string); bu != "" {
-					p.BaseURL = bu
-				}
-				if to, _ := opts["timeout"].(float64); to > 0 {
-					p.TimeoutMs = int(to)
-				}
-				if hto, _ := opts["headerTimeout"].(float64); hto > 0 {
-					p.HeaderTimeoutMs = int(hto)
-				}
-				if cto, _ := opts["chunkTimeout"].(float64); cto > 0 {
-					p.ChunkTimeoutMs = int(cto)
-				}
-				if eu, _ := opts["enterpriseUrl"].(string); eu != "" {
-					p.EnterpriseURL = eu
-				}
-				if sck, _ := opts["setCacheKey"].(bool); sck {
-					p.SetCacheKey = true
-				}
-			}
-
-			// If this config entry's base URL matches an existing provider with a
-			// different ID (e.g. config has "opencode", seed has "opencode-zen"),
-			// merge into the existing one instead of creating a duplicate.
-			if p.BaseURL != "" {
-				if existingID, ok := byBaseURL[p.BaseURL]; ok && existingID != provID {
-					if existing, err := s.db.GetProvider(existingID); err == nil {
-						p.ID = existingID
-						if p.Name == "" {
-							p.Name = existing.Name
-						}
-						if existing.KeyEnv != "" {
-							p.KeyEnv = existing.KeyEnv
-							p.CatalogURL = existing.CatalogURL
-						}
-						// Merge any config-provided fields into the existing record
-						if name != "" {
-							p.Name = name
-						}
-						_ = s.db.UpsertProvider(&p)
-						continue
+		// If this config entry's base URL matches an existing provider with a
+		// different ID (e.g. config has "opencode", seed has "opencode-zen"),
+		// merge into the existing one instead of creating a duplicate.
+		if p.BaseURL != "" {
+			if existingID, ok := byBaseURL[p.BaseURL]; ok && existingID != provID {
+				if existing, err := s.db.GetProvider(existingID); err == nil {
+					p.ID = existingID
+					if p.Name == "" {
+						p.Name = existing.Name
 					}
+					if existing.KeyEnv != "" {
+						p.KeyEnv = existing.KeyEnv
+						p.CatalogURL = existing.CatalogURL
+					}
+					// Merge any config-provided fields into the existing record
+					if provCfg.Name != "" {
+						p.Name = provCfg.Name
+					}
+					_ = s.db.UpsertProvider(&p)
+					continue
 				}
 			}
-
-			// Preserve existing KeyEnv — don't wipe what discover set
-			if existing, err := s.db.GetProvider(provID); err == nil && existing.KeyEnv != "" {
-				p.KeyEnv = existing.KeyEnv
-				p.CatalogURL = existing.CatalogURL
-			}
-			_ = s.db.UpsertProvider(&p)
 		}
+
+		// Preserve existing KeyEnv — don't wipe what discover set
+		if existing, err := s.db.GetProvider(provID); err == nil && existing.KeyEnv != "" {
+			p.KeyEnv = existing.KeyEnv
+			p.CatalogURL = existing.CatalogURL
+		}
+		_ = s.db.UpsertProvider(&p)
 	}
 
-	syncMCP := func() {
-		mcpRaw, ok := cfg["mcp"].(map[string]interface{})
-		if !ok {
-			return
+	// ── MCP ──
+	for id, mcpCfg := range cfg.MCPServers {
+		m := models.MCPServer{ID: id, Source: "sync"}
+		if mcpCfg.Type != "" {
+			m.Type = mcpCfg.Type
 		}
-		for id, val := range mcpRaw {
-			entry, ok := val.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			m := models.MCPServer{ID: id, Source: "sync"}
-			if t, _ := entry["type"].(string); t != "" {
-				m.Type = t
-			}
-			if cmd, _ := entry["command"].([]interface{}); len(cmd) > 0 {
-				b, _ := json.Marshal(cmd)
-				m.Command = string(b)
-			}
-			if u, _ := entry["url"].(string); u != "" {
-				m.URL = u
-			}
-			if e, _ := entry["env"].(map[string]interface{}); len(e) > 0 {
-				b, _ := json.Marshal(e)
-				m.EnvVars = string(b)
-			}
-			if enabled, _ := entry["enabled"].(bool); enabled {
-				m.Enabled = true
-			}
-			if timeout, _ := entry["timeout"].(float64); timeout > 0 {
-				m.Timeout = int(timeout)
-			}
-			_ = s.db.UpsertMCP(&m)
+		if len(mcpCfg.Command) > 0 {
+			b, _ := json.Marshal(mcpCfg.Command)
+			m.Command = string(b)
 		}
+		if mcpCfg.URL != "" {
+			m.URL = mcpCfg.URL
+		}
+		if mcpCfg.Enabled {
+			m.Enabled = true
+		}
+		env := mcpCfg.Env
+		if len(env) == 0 {
+			env = mcpCfg.Environment
+		}
+		if len(env) > 0 {
+			b, _ := json.Marshal(env)
+			m.EnvVars = string(b)
+		}
+		if mcpCfg.Timeout > 0 {
+			m.Timeout = int(mcpCfg.Timeout)
+		}
+		_ = s.db.UpsertMCP(&m)
 	}
 
-	syncCommands := func() {
-		cmdSection, ok := cfg["command"].(map[string]interface{})
-		if !ok {
-			return
-		}
-		for cmdID, cmdVal := range cmdSection {
-			cmdMap, ok := cmdVal.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			template, _ := cmdMap["template"].(string)
-			desc, _ := cmdMap["description"].(string)
-			agent, _ := cmdMap["agent"].(string)
-			model, _ := cmdMap["model"].(string)
-
-			isSubtask := false
-			if v, ok := cmdMap["subtask"]; ok {
-				isSubtask = v.(bool)
-			}
-
-			_ = s.db.UpsertCommand(&models.Command{
-				ID:          cmdID,
-				Template:    template,
-				Description: desc,
-				Agent:       agent,
-				Model:       model,
-				Subtask:     isSubtask,
-				Source:      "opencode",
-				Status:      "active",
-			})
-		}
+	// ── Commands ──
+	for cmdID, cmdCfg := range cfg.Commands {
+		_ = s.db.UpsertCommand(&models.Command{
+			ID:          cmdID,
+			Template:    cmdCfg.Template,
+			Description: cmdCfg.Description,
+			Agent:       cmdCfg.Agent,
+			Model:       cmdCfg.Model,
+			Subtask:     cmdCfg.Subtask,
+			Source:      "opencode",
+			Status:      "active",
+		})
 	}
 
-	syncAgents()
-	syncProviders()
-	syncMCP()
-	syncCommands()
-
-	// Sync meta preferences
+	// ── Meta preferences ──
 	metaKeys := map[string]bool{
 		"autoupdate": true, "disabled_providers": true, "model": true,
 		"small_model": true, "share": true, "compaction": true, "lsp": true,
 		"skills": true, "enabled_providers": true,
 	}
 	for key := range metaKeys {
-		val, ok := cfg[key]
+		val, ok := cfg.Raw[key]
 		if !ok {
 			continue
 		}
@@ -447,6 +421,12 @@ func buildModelEntry(m models.Model, profile models.ModelProfile) map[string]int
 	}
 	if m.Description != "" {
 		entry["description"] = m.Description
+	}
+	if m.Architecture != "" {
+		entry["architecture"] = m.Architecture
+	}
+	if m.RecommendedUse != "" {
+		entry["recommended_use"] = m.RecommendedUse
 	}
 	if m.Family != "" {
 		entry["family"] = m.Family
@@ -673,6 +653,72 @@ func (s *Service) buildMCPSection() (map[string]interface{}, error) {
 	return section, nil
 }
 
+func (s *Service) buildLSPSection() (map[string]interface{}, error) {
+	lsps, err := s.db.ListLSPServers()
+	if err != nil {
+		return nil, err
+	}
+	section := make(map[string]interface{})
+	for _, l := range lsps {
+		entry := map[string]interface{}{}
+		if l.Command != "" {
+			var cmdArr []string
+			if err := json.Unmarshal([]byte(l.Command), &cmdArr); err == nil {
+				entry["command"] = cmdArr
+			}
+		}
+		if l.Extensions != "" {
+			var extArr []string
+			if err := json.Unmarshal([]byte(l.Extensions), &extArr); err == nil {
+				entry["extensions"] = extArr
+			}
+		}
+		if l.Env != "" {
+			var envObj map[string]interface{}
+			if err := json.Unmarshal([]byte(l.Env), &envObj); err == nil {
+				entry["env"] = envObj
+			}
+		}
+		if l.Initialization != "" {
+			var initObj map[string]interface{}
+			if err := json.Unmarshal([]byte(l.Initialization), &initObj); err == nil {
+				entry["initialization"] = initObj
+			}
+		}
+		if l.Disabled {
+			entry["disabled"] = true
+		}
+		if len(entry) > 0 {
+			section[l.ID] = entry
+		}
+	}
+	return section, nil
+}
+
+func (s *Service) buildPluginSection() (map[string]interface{}, error) {
+	skills, err := s.db.ListSkills()
+	if err != nil {
+		return nil, err
+	}
+	section := make(map[string]interface{})
+	for _, sk := range skills {
+		if sk.Type != "plugin" || (sk.Status != "active" && sk.Status != "") {
+			continue
+		}
+		entry := map[string]interface{}{}
+		if sk.Source != "" {
+			entry["source"] = sk.Source
+		}
+		if sk.SourcePath != "" {
+			entry["source_path"] = sk.SourcePath
+		}
+		entry["type"] = sk.Type
+		if len(entry) > 0 {
+			section[sk.ID] = entry
+		}
+	}
+	return section, nil
+}
 func (s *Service) writeStateFile(active, errored, providers int) error {
 	state := map[string]interface{}{
 		"active_models": active,
@@ -724,7 +770,7 @@ func (s *Service) writeStateFile(active, errored, providers int) error {
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(s.outputDir, "okit-state.json")
+	path := filepath.Join(s.outputDir, "maestro-state.json")
 	if err := os.WriteFile(path, out, 0644); err != nil {
 		return err
 	}
@@ -900,7 +946,7 @@ var generatorManagedKeys = map[string]bool{
 	"compaction":         true,
 }
 
-func (s *Service) mergeWithExisting(generated, existing map[string]interface{}) map[string]interface{} {
+func (s *Service) mergeWithExisting(generated, existing map[string]interface{}, preSyncMCPIDs map[string]bool) map[string]interface{} {
 	result := make(map[string]interface{})
 	for k, v := range existing {
 		if !generatorManagedKeys[k] {
@@ -911,7 +957,7 @@ func (s *Service) mergeWithExisting(generated, existing map[string]interface{}) 
 		if k == "mcp" {
 			genMcp, _ := v.(map[string]interface{})
 			existingMcp, _ := existing["mcp"].(map[string]interface{})
-			result["mcp"] = mergeMCP(genMcp, existingMcp)
+			result["mcp"] = mergeMCP(genMcp, existingMcp, preSyncMCPIDs)
 			continue
 		}
 		result[k] = v
@@ -919,15 +965,28 @@ func (s *Service) mergeWithExisting(generated, existing map[string]interface{}) 
 	return result
 }
 
-func mergeMCP(generated, existing map[string]interface{}) map[string]interface{} {
+func mergeMCP(generated, existing map[string]interface{}, preSyncMCPIDs map[string]bool) map[string]interface{} {
 	merged := make(map[string]interface{}, len(generated)+len(existing))
 	for k, v := range generated {
 		merged[k] = v
 	}
 	for k, v := range existing {
 		if _, covered := merged[k]; !covered {
-			merged[k] = v
+			// MCP in existing config but NOT in generated set.
+			// If it was in the pre-sync DB set, maestro managed it and it was deleted → exclude.
+			// If not in pre-sync DB, it's user-added → keep.
+			if !preSyncMCPIDs[k] {
+				merged[k] = v
+			}
 		}
 	}
 	return merged
+}
+
+func validateOpenCodeConfig(data []byte) error {
+	var v interface{}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return fmt.Errorf("json validation: %w", err)
+	}
+	return nil
 }

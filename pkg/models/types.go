@@ -64,23 +64,25 @@ type Model struct {
 	TestCount         int     `json:"test_count,omitempty"`
 	FailCount         int     `json:"fail_count,omitempty"`
 	Source            string  `json:"source"`
+	Architecture      string  `json:"architecture,omitempty"`
+	RecommendedUse    string  `json:"recommended_use,omitempty"`
 }
 
 type Agent struct {
-	ID              string  `json:"id"`
-	TaskType        string  `json:"task_type,omitempty"`
-	Description     string  `json:"description,omitempty"`
-	CurrentModelID  string  `json:"current_model_id,omitempty"`
-	FallbackIDs     string  `json:"fallback_ids,omitempty"` // JSON array
-	PromptFile      string  `json:"prompt_file,omitempty"`
-	Temperature     float64 `json:"temperature,omitempty"`
-	MaxSteps        int     `json:"max_steps,omitempty"`
-	Permission      string  `json:"permission,omitempty"` // JSON
-	Color           string  `json:"color,omitempty"`
-	Mode            string  `json:"mode"` // subagent, primary, all
-	Hidden          bool    `json:"hidden,omitempty"`
-	Status          string  `json:"status"`
-	Source          string  `json:"source"`
+	ID             string  `json:"id"`
+	TaskType       string  `json:"task_type,omitempty"`
+	Description    string  `json:"description,omitempty"`
+	CurrentModelID string  `json:"current_model_id,omitempty"`
+	FallbackIDs    string  `json:"fallback_ids,omitempty"` // JSON array
+	PromptFile     string  `json:"prompt_file,omitempty"`
+	Temperature    float64 `json:"temperature,omitempty"`
+	MaxSteps       int     `json:"max_steps,omitempty"`
+	Permission     string  `json:"permission,omitempty"` // JSON
+	Color          string  `json:"color,omitempty"`
+	Mode           string  `json:"mode"` // subagent, primary, all
+	Hidden         bool    `json:"hidden,omitempty"`
+	Status         string  `json:"status"`
+	Source         string  `json:"source"`
 }
 
 type Skill struct {
@@ -92,24 +94,49 @@ type Skill struct {
 	Status     string `json:"status"`
 	Hash       string `json:"hash,omitempty"`
 	LastSynced int64  `json:"last_synced,omitempty"`
+
+	// Metadata fields for enhanced skill registry
+	Description string `json:"description,omitempty"`
+	Category    string `json:"category,omitempty"`
+	Tags        string `json:"tags,omitempty"`
+	Triggers    string `json:"triggers,omitempty"`
+	SizeBytes   int64  `json:"size_bytes,omitempty"`
+	Filename    string `json:"filename,omitempty"`
+}
+
+// ContextEstimate holds the breakdown of how much context skills consume
+type ContextEstimate struct {
+	TotalBytes  int64            `json:"total_bytes"`
+	TotalSkills int              `json:"total_skills"`
+	BySource    map[string]int64 `json:"by_source,omitempty"`
+	ByCategory  map[string]int64 `json:"by_category,omitempty"`
+	Heaviest    []SkillSizeEntry `json:"heaviest,omitempty"`
+}
+
+// SkillSizeEntry represents a single skill's size contribution
+type SkillSizeEntry struct {
+	ID        string `json:"id"`
+	Source    string `json:"source"`
+	Category  string `json:"category,omitempty"`
+	SizeBytes int64  `json:"size_bytes"`
 }
 
 type MCPServer struct {
-	ID       string `json:"id"`
-	Type     string `json:"type"` // local, remote
-	Command  string `json:"command,omitempty"` // JSON array
-	URL      string `json:"url,omitempty"`
-	Enabled  bool   `json:"enabled"`
-	EnvVars  string `json:"env_vars,omitempty"` // JSON
-	Timeout  int    `json:"timeout_ms,omitempty"`
-	Source   string `json:"source,omitempty"`
+	ID      string `json:"id"`
+	Type    string `json:"type"`              // local, remote
+	Command string `json:"command,omitempty"` // JSON array
+	URL     string `json:"url,omitempty"`
+	Enabled bool   `json:"enabled"`
+	EnvVars string `json:"env_vars,omitempty"` // JSON
+	Timeout int    `json:"timeout_ms,omitempty"`
+	Source  string `json:"source,omitempty"`
 }
 
 type LSPServer struct {
 	ID             string `json:"id"`
-	Command        string `json:"command"` // JSON array
-	Extensions     string `json:"extensions,omitempty"` // JSON array
-	Env            string `json:"env,omitempty"` // JSON
+	Command        string `json:"command"`                  // JSON array
+	Extensions     string `json:"extensions,omitempty"`     // JSON array
+	Env            string `json:"env,omitempty"`            // JSON
 	Initialization string `json:"initialization,omitempty"` // JSON
 	Disabled       bool   `json:"disabled,omitempty"`
 }
@@ -126,15 +153,19 @@ type Command struct {
 }
 
 type RoutingRule struct {
-	TaskKey        string `json:"task_key"`
-	Description    string `json:"description,omitempty"`
-	MinContext     int    `json:"min_context,omitempty"`
-	NeedsFC        bool   `json:"needs_fc"`
-	NeedsVision    bool   `json:"needs_vision"`
+	TaskKey        string  `json:"task_key"`
+	Description    string  `json:"description,omitempty"`
+	MinContext     int     `json:"min_context,omitempty"`
+	NeedsFC        bool    `json:"needs_fc"`
+	NeedsVision    bool    `json:"needs_vision"`
 	MaxCostPerCall float64 `json:"max_cost_per_call,omitempty"`
-	CurrentModelID string `json:"current_model_id,omitempty"`
-	FallbackIDs    string `json:"fallback_ids,omitempty"`
-	LastAssigned   int64  `json:"last_assigned,omitempty"`
+	CurrentModelID string  `json:"current_model_id,omitempty"`
+	FallbackIDs    string  `json:"fallback_ids,omitempty"`
+	LastAssigned   int64   `json:"last_assigned,omitempty"`
+	PriorityWeight int     `json:"priority_weight,omitempty"`
+	Enabled        bool    `json:"enabled"`
+	CreatedAt      string  `json:"created_at,omitempty"`
+	UpdatedAt      string  `json:"updated_at,omitempty"`
 }
 
 type RoutingEvent struct {
@@ -148,13 +179,13 @@ type RoutingEvent struct {
 }
 
 type ModelProfile struct {
-	ModelID       string  `json:"model_id"`
-	RealContext   int     `json:"real_context,omitempty"`
-	MaxOutput     int     `json:"max_output,omitempty"`
-	SupportsStream bool   `json:"supports_stream"`
-	SupportsSO    bool    `json:"supports_so"`
-	StreamTPS     float64 `json:"stream_tps,omitempty"`
-	ProfiledAt    int64   `json:"profiled_at,omitempty"`
+	ModelID        string  `json:"model_id"`
+	RealContext    int     `json:"real_context,omitempty"`
+	MaxOutput      int     `json:"max_output,omitempty"`
+	SupportsStream bool    `json:"supports_stream"`
+	SupportsSO     bool    `json:"supports_so"`
+	StreamTPS      float64 `json:"stream_tps,omitempty"`
+	ProfiledAt     int64   `json:"profiled_at,omitempty"`
 }
 
 type BudgetConfig struct {
@@ -194,12 +225,12 @@ type Snapshot struct {
 }
 
 type Source struct {
-	ID        string `json:"id"`
-	RemoteURL string `json:"remote_url"`
-	LocalPath string `json:"local_path"`
-	Commit    string `json:"commit,omitempty"`
-	Status    string `json:"status"`
-	LastSynced int64 `json:"last_synced,omitempty"`
+	ID         string `json:"id"`
+	RemoteURL  string `json:"remote_url"`
+	LocalPath  string `json:"local_path"`
+	Commit     string `json:"commit,omitempty"`
+	Status     string `json:"status"`
+	LastSynced int64  `json:"last_synced,omitempty"`
 }
 
 type SourceItem struct {
@@ -220,4 +251,56 @@ type ConfigFragment struct {
 	Hash       string `json:"hash,omitempty"`
 	CreatedAt  string `json:"created_at,omitempty"`
 	UpdatedAt  string `json:"updated_at,omitempty"`
+}
+
+type Tool struct {
+	ID          string                   `json:"id"`
+	Description string                   `json:"description,omitempty"`
+	Parameters  map[string]ToolParameter `json:"parameters,omitempty"`
+}
+
+type ToolParameter struct {
+	Type        string                   `json:"type,omitempty"`
+	Description string                   `json:"description,omitempty"`
+	Properties  map[string]ToolParameter `json:"properties,omitempty"`
+	Required    []string                 `json:"required,omitempty"`
+}
+
+type Project struct {
+	ID         string `json:"id"`
+	Path       string `json:"path"`
+	Name       string `json:"name"`
+	DetectedAt int64  `json:"detected_at"`
+	UpdatedAt  int64  `json:"updated_at"`
+	Status     string `json:"status"` // active, stale, archived
+	Source     string `json:"source"` // scan, manual, import
+}
+
+type DetectedStack struct {
+	ID         string  `json:"id"`
+	ProjectID  string  `json:"project_id"`
+	Language   string  `json:"language"`
+	Framework  string  `json:"framework"`
+	Version    string  `json:"version"`
+	Builder    string  `json:"builder"`
+	TestRunner string  `json:"test_runner"`
+	Linter     string  `json:"linter"`
+	DetectedAt int64   `json:"detected_at"`
+	Confidence float64 `json:"confidence"`
+}
+
+type ProjectConfig struct {
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	ConfigType  string `json:"config_type"` // agents, mcps, skills, lsp
+	Content     string `json:"content"`
+	GeneratedAt int64  `json:"generated_at"`
+	Hash        string `json:"hash"`
+}
+
+type ScannerResult struct {
+	ProjectID string            `json:"project_id"`
+	Stacks    []DetectedStack   `json:"stacks"`
+	Configs   map[string]string `json:"configs"`
+	Errors    []string          `json:"errors,omitempty"`
 }

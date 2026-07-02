@@ -6,9 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/internal/util"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 const metaPref = "config/"
@@ -35,15 +34,9 @@ func New(database db.DBInterface) *Service {
 func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 	diff := &Diff{}
 
-	data, err := os.ReadFile(configPath)
+	cfg, err := ParseOpenCodeConfig(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
-	}
-
-	cleaned := util.StripJSONC(data)
-	var cfg map[string]interface{}
-	if err := json.Unmarshal(cleaned, &cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, err
 	}
 
 	existing, _ := s.db.ListProviders()
@@ -52,201 +45,176 @@ func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 		existingMap[p.ID] = true
 	}
 
-	if provSection, ok := cfg["provider"].(map[string]interface{}); ok {
-		for provID, provVal := range provSection {
-			if provCfg, ok := provVal.(map[string]interface{}); ok {
-				provName, _ := provCfg["name"].(string)
-				if provName == "" {
-					provName = provID
-				}
-				provBaseURL := ""
-				if opts, ok := provCfg["options"].(map[string]interface{}); ok {
-					if bu, _ := opts["baseURL"].(string); bu != "" {
-						provBaseURL = bu
-					}
-				}
-				upserted := !existingMap[provID]
-				p := &models.Provider{
-					ID:      provID,
-					Name:    provName,
-					BaseURL: provBaseURL,
-					Source:  "opencode",
-					Status:  "active",
-				}
-				// Preserve existing KeyEnv — don't wipe what discover set
-				if existing, err := s.db.GetProvider(provID); err == nil && existing.KeyEnv != "" {
-					p.KeyEnv = existing.KeyEnv
-					p.CatalogURL = existing.CatalogURL
-				}
-				_ = s.db.UpsertProvider(p)
-				if upserted {
-					diff.AddedProviders = append(diff.AddedProviders, provID)
-				}
+	// ── Providers ──
+	for provID, provCfg := range cfg.Providers {
+		provName := provCfg.Name
+		if provName == "" {
+			provName = provID
+		}
 
-				// Store npm and options as preferences
-				if npm, _ := provCfg["npm"].(string); npm != "" && npm != "null" && npm != "NULL" {
-					_ = s.db.SetPreference("config/provider_npm_"+provID, npm)
-				}
-				if opts, ok := provCfg["options"].(map[string]interface{}); ok && len(opts) > 0 {
-					b, _ := json.Marshal(opts)
-					_ = s.db.SetPreference("config/provider_options_"+provID, string(b))
-				}
-
-				importModels := func(names []string) {
-					for _, name := range names {
-						modelID := provID + "/" + name
-						if err := s.db.UpsertModel(&models.Model{
-							ID:          modelID,
-							ProviderID:  provID,
-							DisplayName: name,
-							Source:      "opencode",
-							Status:      "untested",
-						}); err == nil {
-							diff.AddedModels = append(diff.AddedModels, modelID)
-						}
-						_ = s.db.UpsertModelProfile(&models.ModelProfile{
-							ModelID: modelID,
-						})
-					}
-				}
-				if whitelist, ok := provCfg["whitelist"].([]interface{}); ok {
-					var names []string
-					for _, w := range whitelist {
-						if name, ok := w.(string); ok {
-							names = append(names, name)
-						}
-					}
-					importModels(names)
-				}
-				if modelsSection, ok := provCfg["models"].(map[string]interface{}); ok {
-					var names []string
-					for modelName := range modelsSection {
-						names = append(names, modelName)
-					}
-					importModels(names)
-				}
+		provBaseURL := ""
+		if len(provCfg.Options) > 0 {
+			if bu, _ := provCfg.Options["baseURL"].(string); bu != "" {
+				provBaseURL = bu
 			}
 		}
-	}
 
-	if agentSection, ok := cfg["agent"].(map[string]interface{}); ok {
-		for agentID, agentVal := range agentSection {
-			if agentMap, ok := agentVal.(map[string]interface{}); ok {
-				model, _ := agentMap["model"].(string)
-				desc, _ := agentMap["description"].(string)
-				mode, _ := agentMap["mode"].(string)
-				t, _ := agentMap["temperature"].(float64)
-				color, _ := agentMap["color"].(string)
-
-				_ = s.db.UpsertAgent(&models.Agent{
-					ID:             agentID,
-					Description:    desc,
-					CurrentModelID: model,
-					Mode:           mode,
-					Temperature:    t,
-					Color:          color,
-					Source:         "opencode",
-					Status:         "active",
-				})
-				diff.AddedAgents = append(diff.AddedAgents, agentID)
-			}
+		upserted := !existingMap[provID]
+		p := &models.Provider{
+			ID:      provID,
+			Name:    provName,
+			BaseURL: provBaseURL,
+			Source:  "opencode",
+			Status:  "active",
 		}
-	}
+		// Preserve existing KeyEnv — don't wipe what discover set
+		if existing, err := s.db.GetProvider(provID); err == nil && existing.KeyEnv != "" {
+			p.KeyEnv = existing.KeyEnv
+			p.CatalogURL = existing.CatalogURL
+		}
+		_ = s.db.UpsertProvider(p)
+		if upserted {
+			diff.AddedProviders = append(diff.AddedProviders, provID)
+		}
 
-	if cmdSection, ok := cfg["command"].(map[string]interface{}); ok {
-		for cmdID, cmdVal := range cmdSection {
-			if cmdMap, ok := cmdVal.(map[string]interface{}); ok {
-				tpl, _ := cmdMap["template"].(string)
-				desc, _ := cmdMap["description"].(string)
+		// Store npm and options as preferences
+		if provCfg.NPM != "" && provCfg.NPM != "null" && provCfg.NPM != "NULL" {
+			_ = s.db.SetPreference("config/provider_npm_"+provID, provCfg.NPM)
+		}
+		if len(provCfg.Options) > 0 {
+			b, _ := json.Marshal(provCfg.Options)
+			_ = s.db.SetPreference("config/provider_options_"+provID, string(b))
+		}
 
-				_ = s.db.UpsertCommand(&models.Command{
-					ID:          cmdID,
-					Template:    tpl,
-					Description: desc,
+		importModels := func(names []string) {
+			for _, name := range names {
+				modelID := provID + "/" + name
+				if err := s.db.UpsertModel(&models.Model{
+					ID:          modelID,
+					ProviderID:  provID,
+					DisplayName: name,
 					Source:      "opencode",
-					Status:      "active",
+					Status:      "untested",
+				}); err == nil {
+					diff.AddedModels = append(diff.AddedModels, modelID)
+				}
+				_ = s.db.UpsertModelProfile(&models.ModelProfile{
+					ModelID: modelID,
 				})
-				diff.AddedCommands = append(diff.AddedCommands, cmdID)
 			}
+		}
+		if len(provCfg.Whitelist) > 0 {
+			importModels(provCfg.Whitelist)
+		}
+		if len(provCfg.Models) > 0 {
+			var names []string
+			for modelName := range provCfg.Models {
+				names = append(names, modelName)
+			}
+			importModels(names)
 		}
 	}
 
-	if mcpSection, ok := cfg["mcp"].(map[string]interface{}); ok {
-		for id, val := range mcpSection {
-			entry, _ := val.(map[string]interface{})
-			m := models.MCPServer{ID: id, Source: "opencode"}
-			if t, _ := entry["type"].(string); t != "" {
-				m.Type = t
-			}
-			if cmd, _ := entry["command"].([]interface{}); len(cmd) > 0 {
-				b, _ := json.Marshal(cmd)
-				m.Command = string(b)
-			}
-			if u, _ := entry["url"].(string); u != "" {
-				m.URL = u
-			}
-			if en, _ := entry["enabled"].(bool); en {
-				m.Enabled = true
-			}
-			if env, _ := entry["environment"].(map[string]interface{}); len(env) > 0 {
-				b, _ := json.Marshal(env)
-				m.EnvVars = string(b)
-			}
-			if to, _ := entry["timeout"].(float64); to > 0 {
-				m.Timeout = int(to)
-			}
-			_ = s.db.UpsertMCP(&m)
-			diff.AddedMCPs = append(diff.AddedMCPs, id)
-		}
+	// ── Agents ──
+	for agentID, agentCfg := range cfg.Agents {
+		_ = s.db.UpsertAgent(&models.Agent{
+			ID:             agentID,
+			Description:    agentCfg.Description,
+			CurrentModelID: agentCfg.Model,
+			Mode:           agentCfg.Mode,
+			Temperature:    agentCfg.Temperature,
+			Color:          agentCfg.Color,
+			Source:         "opencode",
+			Status:         "active",
+		})
+		diff.AddedAgents = append(diff.AddedAgents, agentID)
 	}
 
-	if lspBool, isBool := cfg["lsp"].(bool); isBool {
+	// ── Commands ──
+	for cmdID, cmdCfg := range cfg.Commands {
+		_ = s.db.UpsertCommand(&models.Command{
+			ID:          cmdID,
+			Template:    cmdCfg.Template,
+			Description: cmdCfg.Description,
+			Source:      "opencode",
+			Status:      "active",
+		})
+		diff.AddedCommands = append(diff.AddedCommands, cmdID)
+	}
+
+	// ── MCP ──
+	for id, mcpCfg := range cfg.MCPServers {
+		m := models.MCPServer{ID: id, Source: "opencode"}
+		if mcpCfg.Type != "" {
+			m.Type = mcpCfg.Type
+		}
+		if len(mcpCfg.Command) > 0 {
+			b, _ := json.Marshal(mcpCfg.Command)
+			m.Command = string(b)
+		}
+		if mcpCfg.URL != "" {
+			m.URL = mcpCfg.URL
+		}
+		if mcpCfg.Enabled {
+			m.Enabled = true
+		}
+		env := mcpCfg.Environment
+		if len(env) == 0 {
+			env = mcpCfg.Env
+		}
+		if len(env) > 0 {
+			b, _ := json.Marshal(env)
+			m.EnvVars = string(b)
+		}
+		if mcpCfg.Timeout > 0 {
+			m.Timeout = int(mcpCfg.Timeout)
+		}
+		_ = s.db.UpsertMCP(&m)
+		diff.AddedMCPs = append(diff.AddedMCPs, id)
+	}
+
+	// ── LSP ──
+	if lspBool, ok := cfg.LSPEnabled(); ok {
 		_ = s.db.SetPreference(metaPref+"lsp", fmt.Sprintf("%t", lspBool))
-	} else if lspObj, isObj := cfg["lsp"].(map[string]interface{}); isObj {
-		_ = s.db.SetPreference(metaPref+"lsp", "object")
-		for id, val := range lspObj {
-			entry, _ := val.(map[string]interface{})
-			l := models.LSPServer{ID: id}
-			if cmd, _ := entry["command"].([]interface{}); len(cmd) > 0 {
-				b, _ := json.Marshal(cmd)
-				l.Command = string(b)
-			}
-			if ext, _ := entry["extensions"].([]interface{}); len(ext) > 0 {
-				b, _ := json.Marshal(ext)
-				l.Extensions = string(b)
-			}
-			if env, _ := entry["env"].(map[string]interface{}); len(env) > 0 {
-				b, _ := json.Marshal(env)
-				l.Env = string(b)
-			}
-			if init, _ := entry["initialization"].(string); init != "" {
-				l.Initialization = init
-			}
-			if dis, _ := entry["disabled"].(bool); dis {
-				l.Disabled = true
-			}
-			_ = s.db.UpsertLSPServer(&l)
+	}
+	for id, lspCfg := range cfg.LSPServers() {
+		l := models.LSPServer{ID: id}
+		if len(lspCfg.Command) > 0 {
+			b, _ := json.Marshal(lspCfg.Command)
+			l.Command = string(b)
 		}
+		if len(lspCfg.Extensions) > 0 {
+			b, _ := json.Marshal(lspCfg.Extensions)
+			l.Extensions = string(b)
+		}
+		if len(lspCfg.Env) > 0 {
+			b, _ := json.Marshal(lspCfg.Env)
+			l.Env = string(b)
+		}
+		if lspCfg.Initialization != "" {
+			l.Initialization = lspCfg.Initialization
+		}
+		if lspCfg.Disabled {
+			l.Disabled = true
+		}
+		_ = s.db.UpsertLSPServer(&l)
 	}
 
+	// ── Meta preferences ──
 	setJSONPref := func(key string, val interface{}) {
 		b, _ := json.Marshal(val)
 		_ = s.db.SetPreference(key, string(b))
 	}
 	for _, key := range []string{"autoupdate", "disabled_providers", "model", "small_model", "share", "plugin"} {
-		if v, exists := cfg[key]; exists {
+		if v, exists := cfg.Raw[key]; exists {
 			setJSONPref(metaPref+key, v)
 		}
 	}
-	if skills, ok := cfg["skills"].(map[string]interface{}); ok {
-		for sk, sv := range skills {
-			setJSONPref(metaPref+"skills_"+sk, sv)
-		}
+	for sk, sv := range cfg.Skills {
+		setJSONPref(metaPref+"skills_"+sk, sv)
 	}
-	if comp, ok := cfg["compaction"].(map[string]interface{}); ok {
-		for ck, cv := range comp {
-			setJSONPref(metaPref+"compaction_"+ck, cv)
-		}
+	for ck, cv := range cfg.Compaction {
+		setJSONPref(metaPref+"compaction_"+ck, cv)
 	}
 
 	return diff, nil

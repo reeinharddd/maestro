@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func newAgentsCmd(dbPath *string) *cobra.Command {
@@ -89,5 +91,192 @@ func newAgentsCmd(dbPath *string) *cobra.Command {
 			return nil
 		},
 	})
+	cmd.AddCommand(newAgentAddCmd(dbPath))
+	cmd.AddCommand(newAgentUpdateCmd(dbPath))
+	return cmd
+}
+
+func newAgentAddCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add",
+		Short: "Add a custom agent",
+		Long: `Add an agent and auto-sync to opencode config.
+
+Example:
+  maestro agents add --id my-agent --task-type coding --model gpt-4 --description "Coding agent"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, _ := cmd.Flags().GetString("id")
+			if id == "" {
+				return fmt.Errorf("required: --id")
+			}
+
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			a := &models.Agent{
+				ID:     id,
+				Status: "active",
+				Source: "manual",
+			}
+
+			if v, _ := cmd.Flags().GetString("task-type"); v != "" {
+				a.TaskType = v
+			}
+			if v, _ := cmd.Flags().GetString("description"); v != "" {
+				a.Description = v
+			}
+			if v, _ := cmd.Flags().GetString("model"); v != "" {
+				a.CurrentModelID = v
+			}
+			if v, _ := cmd.Flags().GetString("fallback-ids"); v != "" {
+				a.FallbackIDs = v
+			}
+			if v, _ := cmd.Flags().GetString("prompt-file"); v != "" {
+				a.PromptFile = v
+			}
+			if v, _ := cmd.Flags().GetFloat64("temperature"); cmd.Flags().Changed("temperature") {
+				a.Temperature = v
+			}
+			if v, _ := cmd.Flags().GetInt("max-steps"); v > 0 {
+				a.MaxSteps = v
+			}
+			if v, _ := cmd.Flags().GetString("permission"); v != "" {
+				a.Permission = v
+			}
+			if v, _ := cmd.Flags().GetString("color"); v != "" {
+				a.Color = v
+			}
+			if v, _ := cmd.Flags().GetString("mode"); v != "" {
+				a.Mode = v
+			}
+			if v, _ := cmd.Flags().GetBool("hidden"); cmd.Flags().Changed("hidden") {
+				a.Hidden = v
+			}
+			if v, _ := cmd.Flags().GetString("source"); v != "" {
+				a.Source = v
+			}
+
+			if err := d.UpsertAgent(a); err != nil {
+				return fmt.Errorf("db insert: %w", err)
+			}
+			fmt.Printf("Agent %s added to database.\n", id)
+
+			return syncConfig(d)
+		},
+	}
+
+	flagSet := pflag.NewFlagSet("agent", pflag.ExitOnError)
+	flagSet.String("id", "", "Agent ID (required)")
+	flagSet.String("task-type", "", "Task type (e.g. coding, reasoning)")
+	flagSet.String("description", "", "Agent description")
+	flagSet.String("model", "", "Current model ID")
+	flagSet.String("fallback-ids", "", "Fallback model IDs (comma-separated)")
+	flagSet.String("prompt-file", "", "Path to agent prompt file")
+	flagSet.Float64("temperature", 0, "Model temperature")
+	flagSet.Int("max-steps", 0, "Maximum steps")
+	flagSet.String("permission", "", "Agent permission (JSON)")
+	flagSet.String("color", "", "Agent color")
+	flagSet.String("mode", "", "Agent mode (subagent, primary, all)")
+	flagSet.Bool("hidden", false, "Hide agent from lists")
+	flagSet.String("source", "", "Agent source (default: manual)")
+	cmd.Flags().AddFlagSet(flagSet)
+	return cmd
+}
+
+func newAgentUpdateCmd(dbPath *string) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update an existing agent",
+		Long: `Update agent fields. Only provided flags are changed.
+Auto-syncs to opencode config.
+
+Example:
+  maestro agents update --id my-agent --model gpt-4-turbo`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, _ := cmd.Flags().GetString("id")
+			if id == "" {
+				return fmt.Errorf("required: --id")
+			}
+
+			d, err := openDB(dbPath)
+			if err != nil {
+				return err
+			}
+			defer d.Close()
+
+			existing, err := d.GetAgent(id)
+			if err != nil {
+				return fmt.Errorf("agent %q not found: %w", id, err)
+			}
+
+			changed := false
+			if v, _ := cmd.Flags().GetString("task-type"); cmd.Flags().Changed("task-type") {
+				existing.TaskType = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("description"); cmd.Flags().Changed("description") {
+				existing.Description = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("model"); cmd.Flags().Changed("model") {
+				existing.CurrentModelID = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("fallback-ids"); cmd.Flags().Changed("fallback-ids") {
+				existing.FallbackIDs = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("prompt-file"); cmd.Flags().Changed("prompt-file") {
+				existing.PromptFile = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetFloat64("temperature"); cmd.Flags().Changed("temperature") {
+				existing.Temperature = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetInt("max-steps"); cmd.Flags().Changed("max-steps") {
+				existing.MaxSteps = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("permission"); cmd.Flags().Changed("permission") {
+				existing.Permission = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("color"); cmd.Flags().Changed("color") {
+				existing.Color = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("mode"); cmd.Flags().Changed("mode") {
+				existing.Mode = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetBool("hidden"); cmd.Flags().Changed("hidden") {
+				existing.Hidden = v; changed = true
+			}
+			if v, _ := cmd.Flags().GetString("source"); cmd.Flags().Changed("source") {
+				existing.Source = v; changed = true
+			}
+
+			if !changed {
+				return fmt.Errorf("no fields to update (specify at least one flag)")
+			}
+
+			if err := d.UpsertAgent(existing); err != nil {
+				return fmt.Errorf("db update: %w", err)
+			}
+			fmt.Printf("Agent %s updated in database.\n", id)
+
+			return syncConfig(d)
+		},
+	}
+
+	flagSet := pflag.NewFlagSet("agent", pflag.ExitOnError)
+	flagSet.String("id", "", "Agent ID (required)")
+	flagSet.String("task-type", "", "Task type (e.g. coding, reasoning)")
+	flagSet.String("description", "", "Agent description")
+	flagSet.String("model", "", "Current model ID")
+	flagSet.String("fallback-ids", "", "Fallback model IDs (comma-separated)")
+	flagSet.String("prompt-file", "", "Path to agent prompt file")
+	flagSet.Float64("temperature", 0, "Model temperature")
+	flagSet.Int("max-steps", 0, "Maximum steps")
+	flagSet.String("permission", "", "Agent permission (JSON)")
+	flagSet.String("color", "", "Agent color")
+	flagSet.String("mode", "", "Agent mode (subagent, primary, all)")
+	flagSet.Bool("hidden", false, "Hide agent from lists")
+	flagSet.String("source", "", "Agent source")
+	cmd.Flags().AddFlagSet(flagSet)
 	return cmd
 }

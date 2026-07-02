@@ -1,9 +1,3 @@
-// Package classifier provides the Task Classifier for okit.
-// It implements a hybrid model selection system for classifying user tasks.
-//
-// Copyright 2026 OpenCode Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 package classifier_test
 
 import (
@@ -11,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/reeinharddd/okit/internal/classifier"
+	"github.com/reeinharrrd/maestro/internal/classifier"
 	"github.com/stretchr/testify/assert"
 )
 

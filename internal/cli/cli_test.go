@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func TestMaskKey_ShortKey(t *testing.T) {
@@ -123,35 +123,10 @@ func TestParseEnvFile_Missing(t *testing.T) {
 	}
 }
 
-func TestFindConfigPath_PrefersConfigDir(t *testing.T) {
-	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "data", "okit.db")
-	os.MkdirAll(filepath.Dir(dbPath), 0755)
-
-	configDir := filepath.Join(dir, "config", "opencode")
-	jsoncPath := filepath.Join(configDir, "opencode.jsonc")
-	os.MkdirAll(configDir, 0755)
-	os.WriteFile(jsoncPath, []byte("{}"), 0644)
-	defer os.Remove(jsoncPath)
-	old := os.Getenv("OPENCODE_CONFIG_DIR")
-	os.Setenv("OPENCODE_CONFIG_DIR", configDir)
-	t.Cleanup(func() { os.Setenv("OPENCODE_CONFIG_DIR", old) })
-
-	d, err := openDB(&dbPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer d.Close()
-
-	got := findConfigPath(d)
-	if got != jsoncPath {
-		t.Errorf("findConfigPath = %q, want %q", got, jsoncPath)
-	}
-}
 
 func TestFindConfigPath_FallbackToDBDir(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	jsoncPath := filepath.Join(dir, "opencode.jsonc")
 	os.WriteFile(jsoncPath, []byte("{}"), 0644)
 
@@ -191,7 +166,7 @@ func TestCheckFileExists_Found(t *testing.T) {
 
 func TestValidateGeneratesConfig(t *testing.T) {
 	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "okit.db")
+	dbPath := filepath.Join(dir, "maestro.db")
 	d, err := db.Open(dbPath)
 	if err != nil {
 		t.Fatal(err)

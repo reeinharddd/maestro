@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>maestro — Brand Exploration</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0c;
+    color: #e8e6e3;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(180,120,60,0.08) 0%, transparent 70%);
+    top: -200px; right: -200px;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(200,160,100,0.05) 0%, transparent 70%);
+    bottom: -150px; left: -150px;
+  }
+
+  .hero-wordmark {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(6rem, 15vw, 14rem);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.06em;
+    color: #e8e6e3;
+    position: relative;
+    z-index: 1;
+    line-height: 0.85;
+    text-align: center;
+  }
+
+  .hero-wordmark span {
+    display: block;
+    font-size: clamp(1.2rem, 3vw, 2.8rem);
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 1.5rem;
+    color: rgba(232,230,227,0.4);
+  }
+
+  .hero-baton {
+    position: absolute;
+    width: 4px;
+    height: 300px;
+    background: linear-gradient(180deg, rgba(200,160,100,0.6), rgba(200,160,100,0.05));
+    transform: rotate(-35deg);
+    top: 20%;
+    left: 60%;
+    border-radius: 2px;
+    z-index: 0;
+  }
+
+  .hero-baton::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: -12px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,160,100,0.4), transparent);
+  }
+
+  .hero-arc {
+    position: absolute;
+    border: 1px solid rgba(200,160,100,0.08);
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  .hero-arc:nth-child(4) { width: 500px; height: 500px; top: 20%; left: 10%; }
+  .hero-arc:nth-child(5) { width: 700px; height: 700px; top: 10%; right: 5%; }
+
+  /* Section */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(200,160,100,0.6);
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    font-weight: 300;
+    margin-bottom: 3rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* Concept Cards */
+  .concepts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 6rem;
+  }
+
+  .concept-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.2rem;
+    padding: 2.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .concept-card:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(200,160,100,0.2);
+    transform: translateY(-2px);
+  }
+
+  .concept-card .number {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(200,160,100,0.5);
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+  }
+
+  .concept-card .emoji-mood {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .concept-card h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.01em;
+  }
+
+  .concept-card .tagline {
+    font-size: 0.85rem;
+    color: rgba(200,160,100,0.7);
+    font-style: italic;
+    margin-bottom: 1rem;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .concept-card p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(232,230,227,0.7);
+    font-weight: 300;
+  }
+
+  .concept-card .viz-box {
+    width: 100%;
+    height: 120px;
+    margin-top: 1.5rem;
+    border-radius: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Palette */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+  }
+
+  .palette-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.2rem;
+    padding: 2rem;
+  }
+
+  .palette-card h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .palette-card .palette-desc {
+    font-size: 0.85rem;
+    color: rgba(232,230,227,0.5);
+    margin-bottom: 1.2rem;
+    font-weight: 300;
+  }
+
+  .swatches {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .swatch {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .swatch:hover::after {
+    content: attr(data-name);
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    color: rgba(232,230,227,0.6);
+    white-space: nowrap;
+  }
+
+  /* Color viz for concept cards */
+  .viz-abstract {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+  }
+
+  .swatch.gold-leaf { background: #c8a064; }
+  .swatch.amber { background: #d4a04a; }
+  .swatch.deep-ebony { background: #0d0d0f; }
+  .swatch.charcoal { background: #1a1a1e; }
+  .swatch.warm-ivory { background: #e8e6e3; }
+  .swatch.muted-gold { background: #a08050; }
+  .swatch.cream { background: #f5f0e8; }
+  .swatch.platinum { background: #c0c0c0; }
+  .swatch.slate { background: #2a2a2e; }
+
+  .swatch.deep-navy { background: #0f0f2a; }
+  .swatch.cobalt { background: #1e3a6e; }
+  .swatch.silver { background: #c8ccd0; }
+  .swatch.white { background: #ffffff; border-color: rgba(0,0,0,0.15); }
+  .swatch.crimson { background: #601010; }
+  .swatch.burgundy { background: #3a0a0a; }
+
+  .swatch.oxblood { background: #2a0a10; }
+  .swatch.copper { background: #b87333; }
+  .swatch.steel { background: #4a4a5e; }
+  .swatch.pewter { background: #6a6a6e; }
+  .swatch.obsidian { background: #050508; }
+  .swatch.rose-gold { background: #b76e79; }
+
+  .swatch.ink { background: #0a0a12; }
+  .swatch.graphite { background: #2a2a32; }
+  .swatch.amber-glow { background: #e8a040; }
+  .swatch.eggshell { background: #f0ece4; }
+  .swatch.vermilion { background: #c03030; }
+  .swatch.brass { background: #b5a060; }
+
+  .swatch.dark-teal { background: #0a2a2a; }
+  .swatch.forest { background: #1a2a1a; }
+
+  /* Logo concepts */
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+  }
+
+  .logo-concept {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.2rem;
+    padding: 2rem;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  .logo-concept:hover {
+    border-color: rgba(200,160,100,0.2);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .logo-concept .preview {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    line-height: 1;
+  }
+
+  .logo-concept .label {
+    font-size: 0.8rem;
+    color: rgba(232,230,227,0.4);
+    letter-spacing: 0.1em;
+  }
+
+  .logo-svg-container {
+    width: 100%;
+    height: 80px;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* CSS grid for wordmarks */
+  .wordmarks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+
+  .wordmark-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.2rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .wordmark-card .demo {
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .wordmark-card .desc {
+    font-size: 0.8rem;
+    color: rgba(232,230,227,0.4);
+  }
+
+  /* Typography */
+  .type-demo {
+    font-size: 2.5rem;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+  }
+
+  .type-desc {
+    font-size: 0.8rem;
+    color: rgba(232,230,227,0.4);
+    margin-bottom: 2rem;
+  }
+
+  .type-inter { font-family: 'Inter', sans-serif; }
+  .type-playfair { font-family: 'Playfair Display', serif; }
+  .type-mono { font-family: 'DM Mono', monospace; }
+
+  /* SVG baton visualizations */
+  .baton-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .concepts { grid-template-columns: 1fr; }
+    .palette-grid { grid-template-columns: 1fr; }
+    .logo-grid { grid-template-columns: repeat(2, 1fr); }
+    .wordmarks { grid-template-columns: 1fr; }
+  }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+  }
+
+  .tag-concept { background: rgba(200,160,100,0.15); color: #c8a064; border: 1px solid rgba(200,160,100,0.2); }
+  .tag-palette { background: rgba(100,160,200,0.15); color: #64a0c8; border: 1px solid rgba(100,160,200,0.2); }
+  .tag-logo { background: rgba(100,200,160,0.15); color: #64c8a0; border: 1px solid rgba(100,200,160,0.2); }
+  .tag-type { background: rgba(200,100,160,0.15); color: #c864a0; border: 1px solid rgba(200,100,160,0.2); }
+
+  /* Intro */
+  .intro-text {
+    max-width: 720px;
+    margin-bottom: 4rem;
+  }
+
+  .intro-text p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: rgba(232,230,227,0.65);
+    font-weight: 300;
+  }
+
+  .intro-text strong {
+    color: #e8e6e3;
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-baton"></div>
+  <div class="hero-arc"></div>
+  <div class="hero-arc"></div>
+  <div class="hero-wordmark">
+    maestro
+    <span>directing intelligence</span>
+  </div>
+</section>
+
+<!-- ============ INTRO ============ -->
+<section class="section">
+  <div class="section-label">/ brand exploration</div>
+  <div class="section-title">Three directions, one soul</div>
+  <div class="intro-text">
+    <p>maestro sits at the intersection of <strong>precision and passion</strong> — the conductor who holds 120 musicians in perfect tension, who shapes silence into symphony. The brand must capture that duality: <strong>rigor and artistry</strong>, <strong>control and flow</strong>, the invisible hand that makes everything else possible.</p>
+    <p style="margin-top:1rem;">Below are three concept directions. None are final. We iterate.</p>
+  </div>
+
+<!-- ============ CONCEPTS ============ -->
+  <div class="section-label" style="margin-top:4rem">/ concept directions</div>
+
+  <div class="concepts">
+
+    <!-- Concept A -->
+    <div class="concept-card">
+      <div class="number">01</div>
+      <span class="tag tag-concept">PREFERRED</span>
+      <div class="emoji-mood">✦</div>
+      <h3>Silhouette &amp; Line</h3>
+      <div class="tagline">"the gesture, not the face"</div>
+      <p>Abstract conductor silhouette reduced to essential lines. A single continuous stroke — the baton arc, the arm extension, the moment of direction. No face, no details. Pure movement. The way Apple uses silhouette for music but with dramatic tension.</p>
+      <div class="viz-box" style="background:linear-gradient(135deg,#0d0d0f,#1a1a1e);justify-content:center;">
+        <svg viewBox="0 0 200 120" style="width:200px;height:120px;">
+          <path d="M20 100 Q 60 60, 100 40 Q 120 30, 140 10" stroke="#c8a064" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M140 10 L 170 5" stroke="#c8a064" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M10 110 Q 50 70, 100 50 Q 130 38, 160 25" stroke="rgba(200,160,100,0.2)" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <circle cx="170" cy="5" r="6" fill="none" stroke="rgba(200,160,100,0.3)" stroke-width="0.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Concept B -->
+    <div class="concept-card">
+      <div class="number">02</div>
+      <span class="tag tag-concept">SECONDARY</span>
+      <div class="emoji-mood">◈</div>
+      <h3>Architecture of Sound</h3>
+      <div class="tagline">"the structure, not the performance"</div>
+      <p>Geometric abstraction — fragments of a score, tectonic plates, layered planes. Think score notation as architectural blueprint. More cold, more structural. The conductor's score desk, the lines of the music staff transformed into circuit-like paths. Brutalist elegance.</p>
+      <div class="viz-box" style="background:linear-gradient(135deg,#0a0a12,#1a1a2e);justify-content:center;">
+        <svg viewBox="0 0 200 120" style="width:200px;height:120px;">
+          <line x1="20" y1="30" x2="180" y2="30" stroke="c8a064" stroke-width="1" opacity="0.4"/>
+          <line x1="20" y1="45" x2="180" y2="45" stroke="c8a064" stroke-width="1" opacity="0.4"/>
+          <line x1="20" y1="60" x2="180" y2="60" stroke="c8a064" stroke-width="1" opacity="0.4"/>
+          <line x1="20" y1="75" x2="180" y2="75" stroke="c8a064" stroke-width="1" opacity="0.4"/>
+          <line x1="20" y1="90" x2="180" y2="90" stroke="c8a064" stroke-width="1" opacity="0.4"/>
+          <path d="M40 30 L 40 90" stroke="rgba(100,200,255,0.2)" stroke-width="0.5"/>
+          <path d="M80 30 L 80 90" stroke="rgba(100,200,255,0.2)" stroke-width="0.5"/>
+          <path d="M120 30 L 120 90" stroke="rgba(100,200,255,0.2)" stroke-width="0.5"/>
+          <path d="M160 30 L 160 90" stroke="rgba(100,200,255,0.2)" stroke-width="0.5"/>
+          <circle cx="60" cy="58" r="2" fill="#c8a064"/>
+          <circle cx="100" cy="45" r="2" fill="#c8a064"/>
+          <circle cx="140" cy="75" r="2" fill="#c8a064"/>
+          <circle cx="170" cy="38" r="1.5" fill="#c8a064"/>
+          <path d="M55 55 Q 80 40, 100 42 Q 120 44, 140 72" stroke="#c8a064" stroke-width="1" fill="none" opacity="0.6"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Concept C -->
+    <div class="concept-card">
+      <div class="number">03</div>
+      <span class="tag tag-concept">ALTERNATIVE</span>
+      <div class="emoji-mood">◇</div>
+      <h3>Resonance</h3>
+      <div class="tagline">"the feeling, not the instrument"</div>
+      <p>Concentric rings, waveforms, ripples. The moment of impact — a baton touches air and everything vibrates. Softer, more organic. Think stained glass meets waveform. Could translate beautifully to animated loading states, error screens, ambient backgrounds. Most emotional of the three.</p>
+      <div class="viz-box" style="background:linear-gradient(135deg,#0d0a10,#1a0a1e);justify-content:center;">
+        <svg viewBox="0 0 200 120" style="width:200px;height:120px;">
+          <circle cx="100" cy="60" r="40" fill="none" stroke="rgba(200,160,100,0.15)" stroke-width="0.5"/>
+          <circle cx="100" cy="60" r="30" fill="none" stroke="rgba(200,160,100,0.25)" stroke-width="0.5"/>
+          <circle cx="100" cy="60" r="20" fill="none" stroke="rgba(200,160,100,0.35)" stroke-width="0.5"/>
+          <circle cx="100" cy="60" r="10" fill="none" stroke="rgba(200,160,100,0.5)" stroke-width="0.8"/>
+          <circle cx="100" cy="60" r="3" fill="#c8a064"/>
+          <path d="M 60 60 A 40 40 0 0 1 140 60" stroke="#c8a064" stroke-width="1.5" fill="none" opacity="0.5"/>
+          <path d="M 50 60 A 50 50 0 0 1 150 60" stroke="rgba(200,160,100,0.2)" stroke-width="0.8" fill="none" opacity="0.3"/>
+          <path d="M 70 60 A 30 30 0 0 1 130 60" stroke="#c8a064" stroke-width="1" fill="none" opacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+<!-- ============ COLOR PALETTES ============ -->
+  <div class="section-label" style="margin-top:6rem">/ color</div>
+  <div class="section-title">Palette directions</div>
+
+  <div class="palette-grid">
+
+    <div class="palette-card">
+      <h4>⟡ 01. Maestro Gold</h4>
+      <div class="palette-desc">Warm, luxurious, authoritative. Gold as the conductor's baton, dark as the theater. Primary direction.</div>
+      <div class="swatches">
+        <div class="swatch gold-leaf" data-name="Gold Leaf #c8a064"></div>
+        <div class="swatch deep-ebony" data-name="Deep Ebony #0d0d0f"></div>
+        <div class="swatch warm-ivory" data-name="Warm Ivory #e8e6e3"></div>
+        <div class="swatch charcoal" data-name="Charcoal #1a1a1e"></div>
+        <div class="swatch muted-gold" data-name="Muted Gold #a08050"></div>
+      </div>
+    </div>
+
+    <div class="palette-card">
+      <h4>⟡ 02. Cobalt &amp; Ivory</h4>
+      <div class="palette-desc">Cool, precise, modern. The score under cool light. More tech, less theater. Good for docs.</div>
+      <div class="swatches">
+        <div class="swatch deep-navy" data-name="Deep Navy #0f0f2a"></div>
+        <div class="swatch cobalt" data-name="Cobalt #1e3a6e"></div>
+        <div class="swatch silver" data-name="Silver #c8ccd0"></div>
+        <div class="swatch white" data-name="White #ffffff"></div>
+        <div class="swatch crimson" data-name="Crimson #601010"></div>
+      </div>
+    </div>
+
+    <div class="palette-card">
+      <h4>⟡ 03. Ink &amp; Copper</h4>
+      <div class="palette-desc">Print-inspired, editorial, earthy. Like a conductor's well-worn score. Warm but grounded.</div>
+      <div class="swatches">
+        <div class="swatch ink" data-name="Ink #0a0a12"></div>
+        <div class="swatch graphite" data-name="Graphite #2a2a32"></div>
+        <div class="swatch amber-glow" data-name="Amber Glow #e8a040"></div>
+        <div class="swatch eggshell" data-name="Eggshell #f0ece4"></div>
+        <div class="swatch vermilion" data-name="Vermilion #c03030"></div>
+      </div>
+    </div>
+
+    <div class="palette-card">
+      <h4>⟡ 04. Monochrome + Accent</h4>
+      <div class="palette-desc">Pure minimalism. The conductor in black on black. Singular accent for emphasis. CLI-friendly.</div>
+      <div class="swatches">
+        <div class="swatch obsidian" data-name="Obsidian #050508"></div>
+        <div class="swatch steel" data-name="Steel #4a4a5e"></div>
+        <div class="swatch pewter" data-name="Pewter #6a6a6e"></div>
+        <div class="swatch copper" data-name="Copper #b87333"></div>
+        <div class="swatch rose-gold" data-name="Rose Gold #b76e79"></div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- ============ LOGO CONCEPTS ============ -->
+  <div class="section-label" style="margin-top:6rem">/ logo directions</div>
+  <div class="section-title">Mark explorations</div>
+
+  <div class="logo-grid">
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <path d="M10 60 Q 30 30, 55 15 Q 65 10, 70 5" stroke="#c8a064" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M70 5 L 75 8" stroke="#c8a064" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="8" cy="62" r="4" fill="none" stroke="rgba(200,160,100,0.3)" stroke-width="0.8"/>
+        </svg>
+      </div>
+      <div class="label">The Baton — single expressive stroke</div>
+    </div>
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <circle cx="40" cy="40" r="30" fill="none" stroke="#c8a064" stroke-width="1.5"/>
+          <path d="M20 40 L 35 55 L 60 25" stroke="#c8a064" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="40" cy="40" r="3" fill="#c8a064"/>
+        </svg>
+      </div>
+      <div class="label">The Gesture — check-mark as baton arc</div>
+    </div>
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <path d="M15 65 L 15 15 L 40 15 L 40 65 Z" fill="none" stroke="#c8a064" stroke-width="1.5"/>
+          <path d="M40 15 L 65 15 L 65 65 L 40 65 Z" fill="none" stroke="rgba(200,160,100,0.3)" stroke-width="1"/>
+          <line x1="15" y1="40" x2="65" y2="40" stroke="#c8a064" stroke-width="0.8" opacity="0.3"/>
+        </svg>
+      </div>
+      <div class="label">The Score — minimal notation block</div>
+    </div>
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <circle cx="40" cy="40" r="25" fill="none" stroke="rgba(200,160,100,0.2)" stroke-width="0.8"/>
+          <circle cx="40" cy="40" r="15" fill="none" stroke="rgba(200,160,100,0.4)" stroke-width="0.8"/>
+          <circle cx="40" cy="40" r="5" fill="#c8a064"/>
+          <path d="M40 12 Q 55 20, 62 35" stroke="#c8a064" stroke-width="1.5" fill="none" opacity="0.6"/>
+          <path d="M40 68 Q 25 60, 18 45" stroke="rgba(200,160,100,0.3)" stroke-width="1" fill="none" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="label">Resonance — concentric expansion</div>
+    </div>
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <text x="40" y="58" font-family="'Playfair Display', serif" font-size="52" font-style="italic" text-anchor="middle" fill="#e8e6e3">m</text>
+          <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(200,160,100,0.15)" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <div class="label">Lettermark — italic 'm' with arc</div>
+    </div>
+
+    <div class="logo-concept">
+      <div class="logo-svg-container">
+        <svg viewBox="0 0 80 80" style="width:64px;height:64px;">
+          <path d="M20 40 Q 40 10, 60 40 Q 40 70, 20 40" fill="none" stroke="#c8a064" stroke-width="2"/>
+          <path d="M40 15 L 40 65" stroke="rgba(200,160,100,0.2)" stroke-width="0.8"/>
+          <line x1="20" y1="40" x2="60" y2="40" stroke="rgba(200,160,100,0.15)" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <div class="label">Ambisonus — dual arc / baton sweep</div>
+    </div>
+
+  </div>
+
+<!-- ============ WORDMARKS ============ -->
+  <div class="section-label" style="margin-top:6rem">/ wordmarks</div>
+  <div class="section-title">Typography directions</div>
+
+  <div class="wordmarks">
+    <div class="wordmark-card">
+      <div class="demo type-playfair" style="font-size:3.5rem;font-style:italic;color:#e8e6e3;">maestro</div>
+      <div class="desc">Playfair Display Italic — serif, elegant, editorial. The primary voice.</div>
+    </div>
+    <div class="wordmark-card">
+      <div class="demo type-inter" style="font-size:3rem;font-weight:300;letter-spacing:0.02em;color:#e8e6e3;">maestro</div>
+      <div class="desc">Inter Light — sans, modern, clean. The technical voice.</div>
+    </div>
+    <div class="wordmark-card">
+      <div class="demo" style="font-family:'DM Mono',monospace;font-size:2.8rem;font-weight:400;color:#c8a064;">maestro</div>
+      <div class="desc">DM Mono — code-native. The CLI voice.</div>
+    </div>
+    <div class="wordmark-card">
+      <div class="demo type-inter" style="font-size:3.5rem;font-weight:400;text-transform:uppercase;letter-spacing:0.15em;color:#e8e6e3;">M</div>
+      <div class="desc">Inter Uppercase — single lettermark. For avatars, favicons.</div>
+    </div>
+  </div>
+
+<!-- ============ SURFACE NOTES ============ -->
+  <div class="section-label" style="margin-top:6rem">/ surface adaptation</div>
+  <div class="section-title">Heavy where it matters, light where it runs</div>
+
+  <div class="concepts">
+    <div class="concept-card">
+      <h3>📱 Public / Marketing</h3>
+      <p>Full expression. Serif wordmark, gold accent, abstract conductor imagery. Dark theater backgrounds. The emotion is in the open arms gesture — invitation, mastery, control of complexity. Loose, generous space. Photographic or illustrative.</p>
+    </div>
+    <div class="concept-card">
+      <h3>📄 Documentation</h3>
+      <p>Light mode clean. Warm ivory backgrounds, charcoal text. Gold accent sparingly — code blocks, API callouts. The baton stroke as section dividers or horizontal rules. Structured like a score — clear lines, consistent rhythm.</p>
+    </div>
+    <div class="concept-card">
+      <h3>💻 CLI / Terminal</h3>
+      <p>Minimum viable brand. The `m` lettermark or a simple baton character. Gold if terminal supports it, otherwise plain. No imagery. Clean help output IS the brand — alignment, spacing, rhythm <em>are</em> the conductor's precision.</p>
+    </div>
+  </div>
+
+<!-- ============ NEXT ============ -->
+  <div style="margin-top:6rem;padding:2rem;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+    <p style="color:rgba(232,230,227,0.3);font-size:0.85rem;">maestro brand exploration · 2026 · not final, not married</p>
+  </div>
+
+</section>
+
+</body>
+</html>

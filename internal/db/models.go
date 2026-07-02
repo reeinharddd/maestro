@@ -5,26 +5,30 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func (d *DB) UpsertProvider(p *models.Provider) error {
-	_, err := d.Exec(`INSERT INTO providers (id, name, api_base, catalog_url, key_env, is_free, enabled, source, status, priority, timeout_ms, header_timeout_ms, chunk_timeout_ms, enterprise_url, set_cache_key, api_package, env_list, last_synced)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-		name=excluded.name, api_base=excluded.api_base, catalog_url=excluded.catalog_url,
-		key_env=excluded.key_env, is_free=excluded.is_free, enabled=excluded.enabled,
-		source=excluded.source, status=excluded.status,
-		priority=excluded.priority,
-		timeout_ms=excluded.timeout_ms, header_timeout_ms=excluded.header_timeout_ms,
-		chunk_timeout_ms=excluded.chunk_timeout_ms, enterprise_url=excluded.enterprise_url,
-		set_cache_key=excluded.set_cache_key, api_package=excluded.api_package,
-		env_list=excluded.env_list, last_synced=excluded.last_synced`,
-		p.ID, p.Name, p.BaseURL, p.CatalogURL, p.KeyEnv, boolToInt(p.IsFree),
-		boolToInt(p.Enabled), p.Source, p.Status, p.Priority,
-		p.TimeoutMs, p.HeaderTimeoutMs, p.ChunkTimeoutMs, p.EnterpriseURL,
-		boolToInt(p.SetCacheKey), p.APIPackage, p.EnvList, p.LastSynced)
-	return err
+	return d.upsertRow("providers", "id", []upsertCol{
+		{"id", p.ID},
+		{"name", p.Name},
+		{"api_base", p.BaseURL},
+		{"catalog_url", p.CatalogURL},
+		{"key_env", p.KeyEnv},
+		{"is_free", boolToInt(p.IsFree)},
+		{"enabled", boolToInt(p.Enabled)},
+		{"source", p.Source},
+		{"status", p.Status},
+		{"priority", p.Priority},
+		{"timeout_ms", p.TimeoutMs},
+		{"header_timeout_ms", p.HeaderTimeoutMs},
+		{"chunk_timeout_ms", p.ChunkTimeoutMs},
+		{"enterprise_url", p.EnterpriseURL},
+		{"set_cache_key", boolToInt(p.SetCacheKey)},
+		{"api_package", p.APIPackage},
+		{"env_list", p.EnvList},
+		{"last_synced", p.LastSynced},
+	})
 }
 
 var providerCols = `id, name, COALESCE(api_base,''), COALESCE(catalog_url,''), COALESCE(key_env,''), COALESCE(is_free,0), COALESCE(enabled,1), COALESCE(source,'auto'), COALESCE(status,'active'), COALESCE(priority,99), COALESCE(timeout_ms,0), COALESCE(header_timeout_ms,0), COALESCE(chunk_timeout_ms,0), COALESCE(enterprise_url,''), COALESCE(set_cache_key,0), COALESCE(api_package,''), COALESCE(env_list,''), COALESCE(last_synced,0)`
@@ -79,9 +83,10 @@ func (d *DB) DeleteProvider(id string) error {
 	return err
 }
 
+// kept manual: upsertRow can't handle datetime('now') expressions
 func (d *DB) UpsertModel(m *models.Model) error {
-	_, err := d.Exec(`INSERT INTO models (id, provider_id, display_name, description, context_window, max_output, function_calling, vision, reasoning, audio, ocr, fine_tuning, classification, moderation, streaming, structured_outputs, latency_p50_ms, latency_p95_ms, tokens_per_sec, pricing_prompt, pricing_completion, pricing_cache_read, pricing_cache_write, default_temperature, tier, status, error_message, tags, aliases, family, release_date, deprecation, interleaved, experimental, modalities_input, modalities_output, created_timestamp, owned_by, last_tested, test_count, fail_count, source, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+	_, err := d.Exec(`INSERT INTO models (id, provider_id, display_name, description, context_window, max_output, function_calling, vision, reasoning, audio, ocr, fine_tuning, classification, moderation, streaming, structured_outputs, latency_p50_ms, latency_p95_ms, tokens_per_sec, pricing_prompt, pricing_completion, pricing_cache_read, pricing_cache_write, default_temperature, tier, status, error_message, tags, aliases, family, release_date, deprecation, interleaved, experimental, modalities_input, modalities_output, created_timestamp, owned_by, last_tested, test_count, fail_count, source, architecture, recommended_use, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 		ON CONFLICT(id) DO UPDATE SET
 		display_name=excluded.display_name, description=excluded.description,
 		context_window=excluded.context_window, max_output=excluded.max_output,
@@ -103,7 +108,7 @@ func (d *DB) UpsertModel(m *models.Model) error {
 		modalities_output=excluded.modalities_output,
 		created_timestamp=excluded.created_timestamp, owned_by=excluded.owned_by,
 		last_tested=excluded.last_tested, test_count=excluded.test_count,
-		fail_count=excluded.fail_count, source=excluded.source, updated_at=datetime('now')`,
+		fail_count=excluded.fail_count, source=excluded.source, architecture=excluded.architecture, recommended_use=excluded.recommended_use, updated_at=datetime('now')`,
 		m.ID, m.ProviderID, m.DisplayName, m.Description, m.ContextWindow, m.MaxOutput,
 		boolToInt(m.FunctionCalling), boolToInt(m.Vision), boolToInt(m.Reasoning),
 		boolToInt(m.Audio), boolToInt(m.OCR),
@@ -116,11 +121,12 @@ func (d *DB) UpsertModel(m *models.Model) error {
 		m.Deprecation, m.Interleaved, boolToInt(m.Experimental),
 		m.ModalitiesInput, m.ModalitiesOutput,
 		m.CreatedTimestamp, m.OwnedBy,
-		m.LastTested, m.TestCount, m.FailCount, m.Source)
+		m.LastTested, m.TestCount, m.FailCount, m.Source,
+		m.Architecture, m.RecommendedUse)
 	return err
 }
 
-var modelCols = `id, provider_id, COALESCE(display_name,''), COALESCE(description,''), COALESCE(context_window,0), COALESCE(max_output,0), COALESCE(function_calling,0), COALESCE(vision,0), COALESCE(reasoning,0), COALESCE(audio,0), COALESCE(ocr,0), COALESCE(fine_tuning,0), COALESCE(classification,0), COALESCE(moderation,0), COALESCE(streaming,1), COALESCE(structured_outputs,0), COALESCE(latency_p50_ms,0), COALESCE(latency_p95_ms,0), COALESCE(tokens_per_sec,0), COALESCE(pricing_prompt,0), COALESCE(pricing_completion,0), COALESCE(pricing_cache_read,0), COALESCE(pricing_cache_write,0), COALESCE(default_temperature,0), COALESCE(tier,'unknown'), COALESCE(status,'untested'), COALESCE(error_message,''), COALESCE(tags,''), COALESCE(aliases,''), COALESCE(family,''), COALESCE(release_date,''), COALESCE(deprecation,''), COALESCE(interleaved,''), COALESCE(experimental,0), COALESCE(modalities_input,''), COALESCE(modalities_output,''), COALESCE(created_timestamp,0), COALESCE(owned_by,''), COALESCE(last_tested,0), COALESCE(test_count,0), COALESCE(fail_count,0), COALESCE(source,'discovered')`
+var modelCols = `id, provider_id, COALESCE(display_name,''), COALESCE(description,''), COALESCE(context_window,0), COALESCE(max_output,0), COALESCE(function_calling,0), COALESCE(vision,0), COALESCE(reasoning,0), COALESCE(audio,0), COALESCE(ocr,0), COALESCE(fine_tuning,0), COALESCE(classification,0), COALESCE(moderation,0), COALESCE(streaming,1), COALESCE(structured_outputs,0), COALESCE(latency_p50_ms,0), COALESCE(latency_p95_ms,0), COALESCE(tokens_per_sec,0), COALESCE(pricing_prompt,0), COALESCE(pricing_completion,0), COALESCE(pricing_cache_read,0), COALESCE(pricing_cache_write,0), COALESCE(default_temperature,0), COALESCE(tier,'unknown'), COALESCE(status,'untested'), COALESCE(error_message,''), COALESCE(tags,''), COALESCE(aliases,''), COALESCE(family,''), COALESCE(release_date,''), COALESCE(deprecation,''), COALESCE(interleaved,''), COALESCE(experimental,0), COALESCE(modalities_input,''), COALESCE(modalities_output,''), COALESCE(created_timestamp,0), COALESCE(owned_by,''), COALESCE(last_tested,0), COALESCE(test_count,0), COALESCE(fail_count,0), COALESCE(source,'discovered'), COALESCE(architecture,''), COALESCE(recommended_use,'')`
 
 func (d *DB) ListModelsByProvider(providerID string) ([]models.Model, error) {
 	rows, err := d.Query(`SELECT `+modelCols+` FROM models WHERE provider_id=? ORDER BY status, id`, providerID)
@@ -187,7 +193,7 @@ func scanModels(rows *sql.Rows) ([]models.Model, error) {
 			&m.ReleaseDate, &m.Deprecation, &m.Interleaved, &exp,
 			&m.ModalitiesInput, &m.ModalitiesOutput,
 			&m.CreatedTimestamp, &m.OwnedBy,
-			&m.LastTested, &m.TestCount, &m.FailCount, &m.Source); err != nil {
+			&m.LastTested, &m.TestCount, &m.FailCount, &m.Source, &m.Architecture, &m.RecommendedUse); err != nil {
 			return nil, err
 		}
 		m.FunctionCalling = fc != 0

@@ -1,0 +1,105 @@
+# golangci-lint configuration for okit
+# Go 1.25 + Cobra CLI + SQLite (modernc.org/sqlite) + golang-migrate
+# Run: golangci-lint run --fix
+# Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+---
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  disable:
+    - depguard
+  enable:
+    - errname
+    - forcetypeassert
+    - goprintffuncname
+    - intrange
+    - mirror
+    - musttag
+    - perfsprint
+    - revive
+    - sloglint
+    - tenv
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - usetesting
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+
+linters-settings:
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: constant-logical-expr
+      - name: bool-literal-in-expr
+      - name: redefines-builtin-id
+      - name: unnecessary-stmt
+      - name: unreachable-code
+      - name: modifies-value-receiver
+      - name: unused-parameter
+      - name: unused-receiver
+
+  sloglint:
+    args: require
+    no-mixed-args: true
+    key-naming-case: snake
+  testifylint:
+    enable:
+      - bool-compare
+      - compares
+      - empty
+      - error-is-as
+      - error-nil
+      - expected-actual
+      - float-compare
+      - go-require
+      - len
+      - nil-compare
+      - require-error
+      - suite-dont-use-pkg
+      - suite-extra-assert-call
+      - suite-thelper
+
+issues:
+  max-same-issues: 10
+  exclude-dirs:
+    - build/
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - forcetypeassert
+        - sloglint
+    - path: internal/db/
+      text: "root-slash"
+      linters:
+        - musttag

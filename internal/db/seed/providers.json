@@ -1,0 +1,83 @@
+[
+  {
+    "id": "groq",
+    "name": "Groq",
+    "api_base": "https://api.groq.com/openai/v1",
+    "catalog_url": "https://api.groq.com/openai/v1/models",
+    "key_env": "GROQ_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 10
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral",
+    "api_base": "https://api.mistral.ai/v1",
+    "catalog_url": "https://api.mistral.ai/v1/models",
+    "key_env": "MISTRAL_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 20
+  },
+  {
+    "id": "nvidia",
+    "name": "NVIDIA",
+    "api_base": "https://integrate.api.nvidia.com/v1",
+    "catalog_url": "https://integrate.api.nvidia.com/v1/models",
+    "key_env": "NVIDIA_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 30
+  },
+  {
+    "id": "cerebras",
+    "name": "Cerebras",
+    "api_base": "https://api.cerebras.ai/v1",
+    "catalog_url": "https://api.cerebras.ai/public/v1/models",
+    "key_env": "CEREBRAS_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 40
+  },
+  {
+    "id": "openrouter",
+    "name": "OpenRouter",
+    "api_base": "https://openrouter.ai/api/v1",
+    "catalog_url": "https://openrouter.ai/api/v1/models",
+    "key_env": "OPENROUTER_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 50
+  },
+  {
+    "id": "github-models",
+    "name": "GitHub Models",
+    "api_base": "https://models.github.ai/inference",
+    "catalog_url": "https://models.github.ai/catalog/models",
+    "key_env": "GITHUB_TOKEN",
+    "source": "seed",
+    "status": "active",
+    "priority": 60
+  },
+  {
+    "id": "opencode-zen",
+    "name": "OpenCode Zen",
+    "api_base": "https://opencode.ai/zen/v1",
+    "catalog_url": "https://opencode.ai/zen/v1/models",
+    "key_env": "OPENCODE_ZEN_API_KEY",
+    "source": "seed",
+    "status": "active",
+    "priority": 70,
+    "is_free": true
+  },
+  {
+    "id": "github-copilot",
+    "name": "GitHub Copilot",
+    "api_base": "https://api.githubcopilot.com",
+    "catalog_url": "https://api.githubcopilot.com/models",
+    "key_env": "GITHUB_TOKEN",
+    "source": "seed",
+    "status": "active",
+    "priority": 80
+  }
+]

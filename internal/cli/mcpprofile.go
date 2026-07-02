@@ -6,7 +6,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/reeinharddd/okit/internal/util"
+	"github.com/reeinharrrd/maestro/internal/util"
 	"github.com/spf13/cobra"
 )
 

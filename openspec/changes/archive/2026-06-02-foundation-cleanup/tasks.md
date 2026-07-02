@@ -33,10 +33,10 @@ Chain strategy: pending
 
 ## Phase 3: Agents CLI Command
 
-- [x] 3.1 RED: Test `okit agents list` prints agents from DB
-- [x] 3.2 RED: Test `okit agents get <id>` prints agent details
-- [x] 3.3 RED: Test `okit agents delete <id>` removes agent + confirms
-- [x] 3.4 RED: Test `okit agents delete <missing>` returns error + non-zero exit
+- [x] 3.1 RED: Test `maestro agents list` prints agents from DB
+- [x] 3.2 RED: Test `maestro agents get <id>` prints agent details
+- [x] 3.3 RED: Test `maestro agents delete <id>` removes agent + confirms
+- [x] 3.4 RED: Test `maestro agents delete <missing>` returns error + non-zero exit
 - [x] 3.5 GREEN: Create `internal/cli/agents.go` — `newAgentsCmd()` with list/get/delete
 - [x] 3.6 GREEN: Register `newAgentsCmd(&dbPath)` in `internal/cli/root.go`
 

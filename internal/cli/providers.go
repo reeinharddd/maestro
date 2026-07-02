@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/reeinharddd/okit/internal/db"
-	"github.com/reeinharddd/okit/internal/generator"
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/internal/generator"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
 func newProvidersCmdImpl(dbPath *string) *cobra.Command {
@@ -83,7 +83,7 @@ func newProviderAddCmd(dbPath *string) *cobra.Command {
 Security: store only the env var name, NOT the key value.
 
 Example:
-  okit providers add --id my-provider --api-base https://api.example.com --key-env MY_API_KEY`,
+  maestro providers add --id my-provider --api-base https://api.example.com --key-env MY_API_KEY`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			apiBase, _ := cmd.Flags().GetString("api-base")
@@ -164,7 +164,7 @@ func newProviderUpdateCmd(dbPath *string) *cobra.Command {
 Auto-syncs to opencode config.
 
 Example:
-  okit providers update --id my-provider --api-base https://new-api.example.com`,
+  maestro providers update --id my-provider --api-base https://new-api.example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			if id == "" {
@@ -254,7 +254,7 @@ func newProviderRemoveCmd(dbPath *string) *cobra.Command {
 Auto-syncs to opencode config.
 
 Example:
-  okit providers remove --id my-provider`,
+  maestro providers remove --id my-provider`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, _ := cmd.Flags().GetString("id")
 			if id == "" {

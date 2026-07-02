@@ -1,16 +1,12 @@
-// Package classifier provides the Task Classifier for okit.
-// It implements a hybrid model selection system for classifying user tasks.
-//
-// Copyright 2026 OpenCode Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 package classifier
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sort"
 )
+
+var ErrNoModels = fmt.Errorf("no models available")
 
 type modelSelector struct {
 	registry ProviderRegistry
@@ -32,7 +28,7 @@ func (s *modelSelector) SelectModel(ctx context.Context, task Task) (Model, erro
 	}
 
 	if len(models) == 0 {
-		return Model{}, errors.New("no models available")
+		return Model{}, ErrNoModels
 	}
 
 	sort.Slice(models, func(i, j int) bool {

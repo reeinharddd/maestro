@@ -1,0 +1,38 @@
+#!/bin/sh
+# maestro pre-commit hook — enforces quality gates
+# Install: git config core.hooksPath .githooks
+
+set -e
+
+echo "=== maestro pre-commit ==="
+
+# Stash unstaged changes so we only test staged
+STASH_NAME="pre-commit-$(date +%s)"
+git stash push -q --keep-index --message "$STASH_NAME" 2>/dev/null || true
+
+cleanup() {
+  git stash list | grep -q "$STASH_NAME" && git stash pop -q 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# 1. Build
+echo "  [1/4] go build..."
+go build ./... 2>&1 || { echo "FAIL: build"; exit 1; }
+
+# 2. Vet
+echo "  [2/4] go vet..."
+go vet ./... 2>&1 || { echo "FAIL: vet"; exit 1; }
+
+# 3. Test
+echo "  [3/4] go test -race..."
+go test -race -coverprofile=coverage.out ./... 2>&1 || { echo "FAIL: tests"; exit 1; }
+
+# 4. Coverage (advisory)
+echo "  [4/4] coverage check..."
+COVERAGE=$(go tool cover -func=coverage.out 2>/dev/null | grep 'total:' | awk '{print $3}' | tr -d '%' | cut -d. -f1)
+if [ -n "$COVERAGE" ] && [ "$COVERAGE" -lt 10 ] 2>/dev/null; then
+  echo "  WARNING: total coverage is ${COVERAGE}% (below 10%)"
+  echo "  This is advisory for now — improve coverage progressively"
+fi
+
+echo "=== pre-commit PASSED ==="

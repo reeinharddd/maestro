@@ -253,7 +253,7 @@ package db_test
 
 import (
     "testing"
-    "github.com/reeinharddd/okit/internal/db"
+    "github.com/reeinharrrd/maestro/internal/db"
 )
 
 func TestUpsertProvider(t *testing.T) {
@@ -332,3 +332,53 @@ test-suite.sh
 ## 9. Stale Tests
 
 All stale test files have been removed. The test suite passes cleanly.
+
+---
+
+## 10. Definition of Done
+
+Every change MUST satisfy ALL of these before merging:
+
+### Gates (blocking)
+- [ ] `go build ./...` passes
+- [ ] `go vet ./...` passes
+- [ ] `go test -race ./...` passes
+- [ ] No TODOs, stubs, placeholders, or dead code added
+- [ ] Follows existing code patterns and conventions
+- [ ] Conventional commit: `type(scope): description`
+
+### Quality (required)
+- [ ] Tests follow project conventions (table-driven, external packages, in-memory SQLite)
+- [ ] Coverage thresholds met (progressive: db/sync 80%, routing/heal 60%, cli 40%)
+- [ ] Errors are typed and wrapped, not stringly-typed or panic'd
+- [ ] Public API documented with clear names (no magic values or opaque args)
+
+### Memory (required for AI-assisted work)
+- [ ] Architecture decisions saved to engram (`mem_save` with `topic_key`)
+- [ ] Session summary saved on close (`mem_session_summary`)
+- [ ] Phase completions saved as `sessions/maestro-phase-<N>-complete`
+
+### Pre-commit Hook
+Enable with `make install-hooks`. The hook runs build → vet → test-race before every commit.
+
+---
+
+## 11. Quick Reference: Development Flow
+
+```bash
+# Before starting
+skill maestro-dev
+mem_context
+
+# Development loop
+# Write test → implement → make verify → commit
+
+# Before commit
+make verify
+
+# After commit
+mem_save  (if significant change)
+
+# On close
+mem_session_summary
+```

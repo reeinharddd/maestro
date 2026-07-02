@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>maestro — Brand System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600;1,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c8a064;
+  --gold-light:#e8d5a3;
+  --gold-shade:#a08050;
+  --gold-dim:#8a6c3a;
+  --gold-glow:rgba(200,160,100,0.3);
+  --bg:#0d0d0f;
+  --bg-card:#151518;
+  --bg-card-hover:#1c1c20;
+  --text:#e8e6e3;
+  --text-dim:#8a8a8e;
+  --border:rgba(200,160,100,0.12);
+  /* Light variants */
+  --bg-light:#f8f6f2;
+  --bg-card-light:#efede8;
+  --text-light:#1a1a1a;
+  --text-dim-light:#6a6a6e;
+  --border-light:rgba(200,160,100,0.2);
+}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}
+.container{max-width:960px;margin:0 auto;padding:2rem 1.5rem 6rem}
+
+/* Header */
+header{padding:3rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:3rem}
+header h1{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:600;font-style:italic;color:var(--gold)}
+header p{margin-top:.5rem;color:var(--text-dim);font-size:0.9rem}
+.badge{display:inline-block;border:1px solid var(--gold);color:var(--gold);border-radius:99px;padding:.15rem .7rem;font-size:.7rem;font-weight:500;letter-spacing:.02em;text-transform:uppercase;margin-bottom:.75rem}
+
+/* Section */
+section{margin-bottom:4rem}
+section h2{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;margin-bottom:.5rem;color:var(--gold)}
+section h2:not(:first-child){margin-top:3rem}
+section > p{color:var(--text-dim);font-size:.88rem;margin-bottom:1.5rem;max-width:600px}
+
+/* Cards */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:1.5rem}
+.card-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:.75rem;font-weight:500}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* Icon preview */
+.icon-preview{display:flex;align-items:center;justify-content:center;min-height:200px;position:relative}
+.icon-preview svg{max-width:200px;max-height:200px}
+.icon-preview.light{background:var(--bg-light)}
+.icon-preview label{position:absolute;bottom:.5rem;right:.75rem;font-size:.7rem;color:var(--text-dim);background:var(--bg-card);padding:.1rem .5rem;border-radius:4px}
+
+/* Wordmark lockup */
+.lockup{display:flex;align-items:center;gap:.75rem;padding:1.5rem 2rem;border-radius:12px;border:1px solid var(--border)}
+.lockup svg{flex-shrink:0}
+.lockup-text{font-family:'Playfair Display',serif;font-size:2rem;font-weight:600;font-style:italic;letter-spacing:-0.01em}
+.lockup.light{background:var(--bg-light);border-color:var(--border-light)}
+.lockup.minimal svg{opacity:1}
+.lockup-tag{font-size:.7rem;color:var(--text-dim);margin-top:-.1rem;font-family:Inter,sans-serif;font-style:normal;font-weight:400;letter-spacing:.08em;text-transform:uppercase}
+
+/* Terminal */
+.terminal{background:#0a0a0c;border:1px solid #2a2a2e;border-radius:10px;overflow:hidden;font-family:'DM Mono',monospace;font-size:.78rem;line-height:1.5}
+.terminal-bar{background:#151518;padding:.4rem .75rem;display:flex;align-items:center;gap:.4rem;border-bottom:1px solid #2a2a2e}
+.terminal-dot{width:8px;height:8px;border-radius:50%}
+.terminal-dot.r{background:#ff5f56}
+.terminal-dot.y{background:#ffbd2e}
+.terminal-dot.g{background:#27c93f}
+.terminal-title{color:var(--text-dim);font-size:.7rem;margin-left:.5rem}
+.terminal-body{padding:1rem 1.25rem;white-space:pre;overflow-x:auto}
+.terminal-body .gold{color:var(--gold)}
+.terminal-body .dim{color:#5e5e62}
+.terminal-body .green{color:#4caf50}
+.terminal-body .cyan{color:#64b5f6}
+
+/* Mono/single-color */
+.mono-preview{display:flex;align-items:center;justify-content:center;min-height:120px;background:#0d0d0f;border-radius:8px;border:1px solid #2a2a2e}
+.mono-preview.light{background:#f8f6f2;border-color:#ddd8d0}
+
+/* Color swatch */
+.swatch{display:flex;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid var(--border)}
+.swatch:last-child{border-bottom:0}
+.swatch-color{width:40px;height:40px;border-radius:8px;flex-shrink:0;border:1px solid rgba(255,255,255,0.06)}
+.swatch-info{}
+.swatch-name{font-weight:500;font-size:.85rem}
+.swatch-hex{font-size:.75rem;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:.1rem}
+
+/* Favicon row */
+.favicon-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.favicon-box{display:flex;align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--border);border-radius:8px}
+.favicon-box svg{display:block}
+.favicon-label{font-size:.68rem;color:var(--text-dim);text-align:center;margin-top:.3rem}
+
+/* Spec table */
+.spec-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.spec-table td,.spec-table th{padding:.6rem .75rem;border-bottom:1px solid var(--border);text-align:left}
+.spec-table th{color:var(--text-dim);font-weight:500;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.spec-table td{font-family:'DM Mono',monospace;font-size:.78rem}
+
+/* Usage */
+.usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.usage-grid{grid-template-columns:1fr}}
+.usage-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.25rem}
+.usage-card h4{font-size:.8rem;color:var(--gold);margin-bottom:.3rem}
+.usage-card p{font-size:.8rem;color:var(--text-dim)}
+
+/* Spacing */
+.spacer-1{height:1rem}
+.spacer-2{height:2rem}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- HEADER -->
+<header>
+  <div class="badge">Brand System v1.0</div>
+  <h1>maestro</h1>
+  <p>Full visual identity — icon, wordmark, terminal, favicon. Direction: Ascending (+30°).</p>
+</header>
+
+<!-- ============================================================ -->
+<!-- 1. ICON — Polished Ascending Baton -->
+<!-- ============================================================ -->
+<section>
+  <h2>Icon — Ascending Baton</h2>
+  <p>The primary glyph. A conductor's baton at +30° — upward, leading, in motion. Gold metallic gradient with subtle glow and motion particles. Works on dark and light backgrounds.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">Dark Background</div>
+      <div class="icon-preview">
+        <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Gold gradient for shaft -->
+            <linearGradient id="shaftG" x1="28" y1="212" x2="212" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#e8d5a3"/>
+              <stop offset="25%" stop-color="#c8a064"/>
+              <stop offset="50%" stop-color="#f0e0b0"/>
+              <stop offset="75%" stop-color="#b89050"/>
+              <stop offset="100%" stop-color="#c8a064"/>
+            </linearGradient>
+            <!-- Highlight gradient -->
+            <linearGradient id="shaftH" x1="28" y1="212" x2="212" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+              <stop offset="40%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <!-- Grip gradient -->
+            <linearGradient id="gripG" x1="136" y1="176" x2="96" y2="216" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#3a2a18"/>
+              <stop offset="30%" stop-color="#5a3a20"/>
+              <stop offset="60%" stop-color="#3a2a18"/>
+              <stop offset="100%" stop-color="#2a1a0a"/>
+            </linearGradient>
+            <!-- Nock ring -->
+            <linearGradient id="nockG" x1="112" y1="0" x2="112" y2="24" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#c8a064"/>
+              <stop offset="50%" stop-color="#f0e0b0"/>
+              <stop offset="100%" stop-color="#a08050"/>
+            </linearGradient>
+            <!-- Glow filter -->
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="8" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="16" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+
+          <!-- Outer glow behind tip -->
+          <ellipse cx="196" cy="44" rx="40" ry="32" fill="url(#shaftG)" opacity="0.08" filter="url(#softGlow)"/>
+
+          <!-- Motion particles -->
+          <circle cx="158" cy="76" r="1.5" fill="var(--gold,#c8a064)" opacity="0.3"/>
+          <circle cx="132" cy="108" r="1" fill="var(--gold,#c8a064)" opacity="0.2"/>
+          <circle cx="178" cy="60" r="1" fill="var(--gold,#c8a064)" opacity="0.4"/>
+          <circle cx="120" cy="140" r="1.2" fill="var(--gold,#c8a064)" opacity="0.15"/>
+          <circle cx="210" cy="36" r="0.8" fill="var(--gold,#c8a064)" opacity="0.35"/>
+
+          <!-- Shaft (main baton body) -->
+          <!-- Rotated +30°: from bottom-left toward top-right -->
+          <line x1="72" y1="201" x2="200" y2="40" stroke="url(#shaftG)" stroke-width="4.5" stroke-linecap="round" filter="url(#glow)"/>
+
+          <!-- Shaft highlight (thin bright line offset) -->
+          <line x1="72" y1="200" x2="198" y2="41" stroke="url(#shaftH)" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Grip / handle (wider lower section, wood texture) -->
+          <line x1="88" y1="186" x2="72" y2="201" stroke="url(#gripG)" stroke-width="7" stroke-linecap="round"/>
+
+          <!-- Cork wrap lines on grip -->
+          <line x1="86" y1="186" x2="75" y2="197" stroke="#4a3018" stroke-width="0.8" opacity="0.4"/>
+          <line x1="84" y1="188" x2="73" y2="199" stroke="#6a4a28" stroke-width="0.6" opacity="0.3"/>
+          <line x1="82" y1="190" x2="71" y2="201" stroke="#4a3018" stroke-width="0.8" opacity="0.35"/>
+
+          <!-- Nock (transition ring) -->
+          <ellipse cx="88" cy="187" rx="4.5" ry="2" fill="url(#nockG)" stroke="#a08050" stroke-width="0.5"/>
+
+          <!-- Tip highlight -->
+          <circle cx="200" cy="40" r="3.5" fill="var(--gold-light,#e8d5a3)" opacity="0.5" filter="url(#glow)"/>
+          <circle cx="200" cy="40" r="1.5" fill="var(--gold-light,#e8d5a3)" opacity="0.7"/>
+        </svg>
+        <label>Dark</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Light Background</div>
+      <div class="icon-preview light">
+        <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shaftG_l" x1="28" y1="212" x2="212" y2="28">
+              <stop offset="0%" stop-color="#c8a064"/>
+              <stop offset="25%" stop-color="#a08050"/>
+              <stop offset="50%" stop-color="#d4b87a"/>
+              <stop offset="75%" stop-color="#8a6c3a"/>
+              <stop offset="100%" stop-color="#a08050"/>
+            </linearGradient>
+            <linearGradient id="shaftH_l" x1="28" y1="212" x2="212" y2="28">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+              <stop offset="40%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <linearGradient id="gripG_l" x1="136" y1="176" x2="96" y2="216">
+              <stop offset="0%" stop-color="#5a3a20"/>
+              <stop offset="30%" stop-color="#7a5030"/>
+              <stop offset="60%" stop-color="#5a3a20"/>
+              <stop offset="100%" stop-color="#4a2a10"/>
+            </linearGradient>
+            <linearGradient id="nockG_l" x1="112" y1="0" x2="112" y2="24">
+              <stop offset="0%" stop-color="#a08050"/>
+              <stop offset="50%" stop-color="#c8a064"/>
+              <stop offset="100%" stop-color="#8a6c3a"/>
+            </linearGradient>
+            <filter id="glow_l" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="6"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+            <filter id="softGlow_l" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="12"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          <ellipse cx="196" cy="44" rx="36" ry="28" fill="#c8a064" opacity="0.06" filter="url(#softGlow_l)"/>
+          <circle cx="158" cy="76" r="1.5" fill="#a08050" opacity="0.25"/>
+          <circle cx="132" cy="108" r="1" fill="#a08050" opacity="0.15"/>
+          <circle cx="178" cy="60" r="1" fill="#a08050" opacity="0.3"/>
+          <circle cx="120" cy="140" r="1.2" fill="#a08050" opacity="0.1"/>
+          <circle cx="210" cy="36" r="0.8" fill="#a08050" opacity="0.25"/>
+          <line x1="72" y1="201" x2="200" y2="40" stroke="url(#shaftG_l)" stroke-width="4.5" stroke-linecap="round" filter="url(#glow_l)"/>
+          <line x1="72" y1="200" x2="198" y2="41" stroke="url(#shaftH_l)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="88" y1="186" x2="72" y2="201" stroke="url(#gripG_l)" stroke-width="7" stroke-linecap="round"/>
+          <line x1="86" y1="186" x2="75" y2="197" stroke="#4a3018" stroke-width="0.8" opacity="0.35"/>
+          <line x1="84" y1="188" x2="73" y2="199" stroke="#6a4a28" stroke-width="0.6" opacity="0.25"/>
+          <line x1="82" y1="190" x2="71" y2="201" stroke="#4a3018" stroke-width="0.8" opacity="0.3"/>
+          <ellipse cx="88" cy="187" rx="4.5" ry="2" fill="url(#nockG_l)" stroke="#8a6c3a" stroke-width="0.5"/>
+          <circle cx="200" cy="40" r="3" fill="#c8a064" opacity="0.4" filter="url(#glow_l)"/>
+          <circle cx="200" cy="40" r="1.2" fill="#c8a064" opacity="0.6"/>
+        </svg>
+        <label>Light</label>
+      </div>
+    </div>
+  </div>
+
+  <h2>Mono / Single-Color</h2>
+  <p>One-color variant for favicons, watermarks, small sizes, and print.</p>
+  <div class="grid-2">
+    <div class="mono-preview">
+      <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="72" y1="201" x2="200" y2="40" stroke="#c8a064" stroke-width="4" stroke-linecap="round"/>
+        <line x1="88" y1="186" x2="72" y2="201" stroke="#c8a064" stroke-width="7" stroke-linecap="round"/>
+        <ellipse cx="88" cy="187" rx="4.5" ry="2" fill="#c8a064" stroke="#c8a064" stroke-width="0.5"/>
+      </svg>
+    </div>
+    <div class="mono-preview light">
+      <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="72" y1="201" x2="200" y2="40" stroke="#a08050" stroke-width="4" stroke-linecap="round"/>
+        <line x1="88" y1="186" x2="72" y2="201" stroke="#a08050" stroke-width="7" stroke-linecap="round"/>
+        <ellipse cx="88" cy="187" rx="4.5" ry="2" fill="#a08050" stroke="#a08050" stroke-width="0.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <h2>Icon Specs</h2>
+  <table class="spec-table">
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Canvas</td><td>240 × 240 px</td></tr>
+    <tr><td>Baton angle</td><td>+30° from horizontal (Ascending)</td></tr>
+    <tr><td>Shaft length</td><td>168 px (tip to nock)</td></tr>
+    <tr><td>Shaft width</td><td>4.5 px (tapers optically)</td></tr>
+    <tr><td>Grip length</td><td>16 px (handle section)</td></tr>
+    <tr><td>Grip width</td><td>7 px (wider than shaft)</td></tr>
+    <tr><td>Safe zone</td><td>20 px padding on all sides</td></tr>
+    <tr><td>Min size</td><td>32 × 32 px (favicon)</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 2. WORDMARK LOCKUP -->
+<!-- ============================================================ -->
+<section>
+  <h2>Wordmark Lockup</h2>
+  <p>Icon + wordmark combined. Two modes: standard (for most uses) and compact (tight spacing for small spaces).</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card-label">Dark Background</div>
+      <div class="lockup" style="background:var(--bg-card)">
+        <svg viewBox="0 0 56 56" width="44" height="44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sS" x1="6" y1="50" x2="50" y2="6">
+              <stop offset="0%" stop-color="#e8d5a3"/>
+              <stop offset="25%" stop-color="#c8a064"/>
+              <stop offset="50%" stop-color="#f0e0b0"/>
+              <stop offset="75%" stop-color="#b89050"/>
+              <stop offset="100%" stop-color="#c8a064"/>
+            </linearGradient>
+            <linearGradient id="gS" x1="32" y1="40" x2="22" y2="50">
+              <stop offset="0%" stop-color="#3a2a18"/>
+              <stop offset="50%" stop-color="#5a3a20"/>
+              <stop offset="100%" stop-color="#2a1a0a"/>
+            </linearGradient>
+          </defs>
+          <line x1="16" y1="47" x2="47" y2="8" stroke="url(#sS)" stroke-width="3.8" stroke-linecap="round"/>
+          <line x1="20" y1="43" x2="16" y2="47" stroke="url(#gS)" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="20" cy="43.5" rx="3.8" ry="1.8" fill="#c8a064" stroke="#a08050" stroke-width="0.4"/>
+        </svg>
+        <div>
+          <div class="lockup-text" style="color:var(--text)">maestro</div>
+          <div class="lockup-tag">orchestrator</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card-label">Light Background</div>
+      <div class="lockup light">
+        <svg viewBox="0 0 56 56" width="44" height="44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sL" x1="6" y1="50" x2="50" y2="6">
+              <stop offset="0%" stop-color="#c8a064"/>
+              <stop offset="25%" stop-color="#a08050"/>
+              <stop offset="50%" stop-color="#d4b87a"/>
+              <stop offset="75%" stop-color="#8a6c3a"/>
+              <stop offset="100%" stop-color="#a08050"/>
+            </linearGradient>
+            <linearGradient id="gL" x1="32" y1="40" x2="22" y2="50">
+              <stop offset="0%" stop-color="#5a3a20"/>
+              <stop offset="50%" stop-color="#7a5030"/>
+              <stop offset="100%" stop-color="#4a2a10"/>
+            </linearGradient>
+          </defs>
+          <line x1="16" y1="47" x2="47" y2="8" stroke="url(#sL)" stroke-width="3.8" stroke-linecap="round"/>
+          <line x1="20" y1="43" x2="16" y2="47" stroke="url(#gL)" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="20" cy="43.5" rx="3.8" ry="1.8" fill="#a08050" stroke="#8a6c3a" stroke-width="0.4"/>
+        </svg>
+        <div>
+          <div class="lockup-text" style="color:var(--text-light)">maestro</div>
+          <div class="lockup-tag" style="color:var(--text-dim-light)">orchestrator</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Mono Lockup</h3>
+  <p>Single-color for small sizes or constrained palettes.</p>
+  <div class="grid-2">
+    <div>
+      <div class="lockup minimal" style="background:var(--bg-card)">
+        <svg viewBox="0 0 56 56" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="16" y1="47" x2="47" y2="8" stroke="#c8a064" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="20" y1="43" x2="16" y2="47" stroke="#c8a064" stroke-width="5.5" stroke-linecap="round"/>
+          <ellipse cx="20" cy="43.5" rx="3.5" ry="1.6" fill="#c8a064"/>
+        </svg>
+        <div class="lockup-text" style="color:var(--text);font-size:1.5rem">maestro</div>
+      </div>
+    </div>
+    <div>
+      <div class="lockup minimal light">
+        <svg viewBox="0 0 56 56" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="16" y1="47" x2="47" y2="8" stroke="#8a6c3a" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="20" y1="43" x2="16" y2="47" stroke="#8a6c3a" stroke-width="5.5" stroke-linecap="round"/>
+          <ellipse cx="20" cy="43.5" rx="3.5" ry="1.6" fill="#8a6c3a"/>
+        </svg>
+        <div class="lockup-text" style="color:var(--text-light);font-size:1.5rem">maestro</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Wordmark Specs</h3>
+  <table class="spec-table">
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Typeface</td><td>Playfair Display, Italic 600</td></tr>
+    <tr><td>Case</td><td>Lowercase</td></tr>
+    <tr><td>Icon : wordmark ratio</td><td>~1:3 (icon 44px : text ~130px at 2rem)</td></tr>
+    <tr><td>Letter-spacing</td><td>−0.01em (tight)</td></tr>
+    <tr><td>Minimum lockup width</td><td>180 px</td></tr>
+    <tr><td>Tagline typeface</td><td>Inter, 400, uppercase, 0.08em tracking</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 3. TERMINAL ASCII -->
+<!-- ============================================================ -->
+<section>
+  <h2>Terminal Representation</h2>
+  <p>ASCII art for CLI environments, splash screens, and README headers. Three variants: standard (decorative), compact (one-liner), and splash (with version and stats).</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card-label">Standard (8 lines)</div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot r"></span>
+          <span class="terminal-dot y"></span>
+          <span class="terminal-dot g"></span>
+          <span class="terminal-title">maestro — terminal</span>
+        </div>
+        <div class="terminal-body">                <span class=\"gold\">╱</span>
+             <span class=\"gold\">╱</span>
+            <span class=\"gold\">╱</span>   <span class=\"gold\">maestro</span>
+           <span class=\"gold\">╱</span>    <span class=\"dim\">──────────</span>
+          <span class=\"gold\">╱</span>     <span class=\"dim\">orchestrator</span>
+         <span class=\"gold\">╱</span>
+        <span class=\"gold\">╱</span>
+<span class=\"gold\">██</span>
+<span class=\"gold\">██</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="card-label">Compact (1 line)</div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot r"></span>
+          <span class="terminal-dot y"></span>
+          <span class="terminal-dot g"></span>
+          <span class="terminal-title">maestro — compact</span>
+        </div>
+        <div class="terminal-body"><span class=\"gold\">╱</span>  <span class=\"gold\">maestro</span>  <span class=\"dim\">~  orchestrator</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer-1"></div>
+
+  <div>
+    <div class="card-label">Detailed (splash-style)</div>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dot r"></span>
+        <span class="terminal-dot y"></span>
+        <span class="terminal-dot g"></span>
+        <span class="terminal-title">maestro — splash</span>
+      </div>
+      <div class="terminal-body">      <span class=\"gold\">╱</span>
+     <span class=\"gold\">╱</span>
+    <span class=\"gold\">╱</span>   <span class=\"gold\">maestro</span>  v1.0.0
+   <span class=\"gold\">╱</span>    <span class=\"dim\">──────────────────</span>
+  <span class=\"gold\">╱</span>     <span class=\"dim\">orchestrator · models · MCPs</span>
+ <span class=\"gold\">╱</span>
+<span class=\"gold\">╱</span>
+<span class=\"gold\">██</span>
+<span class=\"gold\">██</span>
+
+<span class=\"green\">●</span> config  <span class=\"cyan\">●</span> sync  <span class=\"green\">●</span> heal
+<span class=\"green\">3</span> providers · <span class=\"green\">12</span> models · <span class=\"green\">8</span> agents
+</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 4. FAVICON -->
+<!-- ============================================================ -->
+<section>
+  <h2>Favicon</h2>
+  <p>Simplified baton glyph for browser tabs, bookmarks, and app icons. Reduced detail — thick lines remain legible at 16–48 px.</p>
+
+  <div class="favicon-row">
+    <div>
+      <div class="favicon-box" style="width:48px;height:48px">
+        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="12" y1="40" x2="40" y2="8" stroke="#c8a064" stroke-width="4" stroke-linecap="round"/>
+          <line x1="15" y1="37" x2="12" y2="40" stroke="#c8a064" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="favicon-label">48 px</div>
+    </div>
+    <div>
+      <div class="favicon-box" style="width:32px;height:32px">
+        <svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="12" y1="40" x2="40" y2="8" stroke="#c8a064" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="15" y1="37" x2="12" y2="40" stroke="#c8a064" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="favicon-label">32 px</div>
+    </div>
+    <div>
+      <div class="favicon-box" style="width:24px;height:24px">
+        <svg viewBox="0 0 48 48" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="12" y1="40" x2="40" y2="8" stroke="#c8a064" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="favicon-label">24 px</div>
+    </div>
+    <div>
+      <div class="favicon-box" style="width:16px;height:16px">
+        <svg viewBox="0 0 48 48" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="12" y1="40" x2="40" y2="8" stroke="#c8a064" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="favicon-label">16 px</div>
+    </div>
+    <div>
+      <div class="favicon-box" style="width:48px;height:48px;background:var(--bg-light);border-color:var(--border-light)">
+        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="12" y1="40" x2="40" y2="8" stroke="#8a6c3a" stroke-width="4" stroke-linecap="round"/>
+          <line x1="15" y1="37" x2="12" y2="40" stroke="#8a6c3a" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="favicon-label">Light 48 px</div>
+    </div>
+  </div>
+
+  <div class="spacer-1"></div>
+
+  <h3>Favicon Specs</h3>
+  <table class="spec-table">
+    <tr><th>Format</th><th>Size</th><th>Use</th></tr>
+    <tr><td>SVG</td><td>48×48 viewBox</td><td>Modern browsers (primary)</td></tr>
+    <tr><td>PNG</td><td>32×32</td><td>Legacy browsers</td></tr>
+    <tr><td>PNG</td><td>180×180</td><td>Apple touch icon</td></tr>
+    <tr><td>SVG stroke</td><td>4px (gold #c8a064)</td><td>Dark theme favicon</td></tr>
+    <tr><td>SVG stroke</td><td>4px (#8a6c3a)</td><td>Light theme favicon</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 5. COLOR PALETTE -->
+<!-- ============================================================ -->
+<section>
+  <h2>Color Palette</h2>
+  <p>Maestro Gold is the anchor. All weights derived from the same hue/temperature.</p>
+
+  <div class="swatch">
+    <div class="swatch-color" style="background:#f0e0b0"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Gold Highlight</div>
+      <div class="swatch-hex">#f0e0b0 — light catch, edge highlights</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#e8d5a3"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Gold Light</div>
+      <div class="swatch-hex">#e8d5a3 — secondary bright, tip glow</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#c8a064"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Maestro Gold</div>
+      <div class="swatch-hex">#c8a064 — primary brand color</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#b89050"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Gold Shadow</div>
+      <div class="swatch-hex">#b89050 — mid shadow in gradient</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#a08050"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Gold Shade</div>
+      <div class="swatch-hex">#a08050 — dark accent, light bg mono</div>
+    </div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#8a6c3a"></div>
+    <div class="swatch-info">
+      <div class="swatch-name">Gold Dim</div>
+      <div class="swatch-hex">#8a6c3a — deepest shade, light bg primary</div>
+    </div>
+  </div>
+
+  <div class="spacer-1"></div>
+
+  <h3>Background &amp; Text</h3>
+  <div class="grid-2">
+    <div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0d0d0f;border-color:#333"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Dark BG</div>
+          <div class="swatch-hex">#0d0d0f</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#151518;border-color:#333"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Dark Card</div>
+          <div class="swatch-hex">#151518</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#e8e6e3"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Dark Text</div>
+          <div class="swatch-hex">#e8e6e3</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f8f6f2;border-color:#ddd8d0"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Light BG</div>
+          <div class="swatch-hex">#f8f6f2</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#efede8;border-color:#ddd8d0"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Light Card</div>
+          <div class="swatch-hex">#efede8</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1a1a1a"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Light Text</div>
+          <div class="swatch-hex">#1a1a1a</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 6. USAGE GUIDELINES -->
+<!-- ============================================================ -->
+<section>
+  <h2>Usage Guidelines</h2>
+
+  <div class="usage-grid">
+    <div class="usage-card">
+      <h4>Primary lockup</h4>
+      <p>Icon + wordmark on dark bg. Use on landing page, docs header, splash screen. Never recolor or distort.</p>
+    </div>
+    <div class="usage-card">
+      <h4>Icon standalone</h4>
+      <p>App icon, avatar, CLI --version output, favicon. Use full-color on dark, mono on light.</p>
+    </div>
+    <div class="usage-card">
+      <h4>Mono icon</h4>
+      <p>Small sizes (&lt;32 px), print, watermarks, constrained palettes. One stroke weight, no gradient.</p>
+    </div>
+    <div class="usage-card">
+      <h4>ASCII art</h4>
+      <p>CLI splash, README.md, --help header, MOTD. Use compact for terminals &lt;60 cols.</p>
+    </div>
+    <div class="usage-card">
+      <h4>Favicon</h4>
+      <p>SVG in &lt;link rel="icon" type="image/svg+xml"&gt;. Gold #c8a064 on dark, #8a6c3a on light via media queries.</p>
+    </div>
+    <div class="usage-card">
+      <h4>Do not</h4>
+      <p>Rotate the baton. Change the angle. Recolor to non-gold. Outline in white. Add text inside icon.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<div style="border-top:1px solid var(--border);padding-top:2rem;margin-top:2rem;color:var(--text-dim);font-size:.8rem">
+  <p>maestro brand system · Direction: Ascending (+30°) · Gold palette</p>
+  <p style="margin-top:.3rem">Generated during design exploration · <a href="logo-direction-variants.html">View all variants</a> · <a href="logo-hires.html">View hi-res concepts</a></p>
+</div>
+
+</div>
+</body>
+</html>

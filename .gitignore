@@ -1,2 +1,6 @@
-okit
+/okit
 coverage.out
+/.omo/
+/.engram/
+/captures/
+/maestro

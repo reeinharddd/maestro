@@ -1,24 +1,29 @@
 package db
 
 import (
-	"github.com/reeinharddd/okit/pkg/models"
+	"github.com/reeinharrrd/maestro/pkg/models"
 )
 
+// kept manual: upsertRow can't handle datetime('now') expressions
 func (d *DB) UpsertRoutingRule(r *models.RoutingRule) error {
-	_, err := d.Exec(`INSERT INTO routing_rules (task_key, description, min_context, needs_fc, needs_vision, max_cost_per_call, current_model_id, fallback_ids, last_assigned)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	_, err := d.Exec(`INSERT INTO routing_rules
+		(task_key, description, min_context, needs_fc, needs_vision, max_cost_per_call, current_model_id, fallback_ids, last_assigned, priority_weight, enabled, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM routing_rules WHERE task_key=?), datetime('now')), datetime('now'))
 		ON CONFLICT(task_key) DO UPDATE SET
 		description=excluded.description, min_context=excluded.min_context,
 		needs_fc=excluded.needs_fc, needs_vision=excluded.needs_vision,
 		max_cost_per_call=excluded.max_cost_per_call,
-		current_model_id=excluded.current_model_id, fallback_ids=excluded.fallback_ids, last_assigned=excluded.last_assigned`,
+		current_model_id=excluded.current_model_id,
+		fallback_ids=excluded.fallback_ids, last_assigned=excluded.last_assigned,
+		priority_weight=excluded.priority_weight, enabled=excluded.enabled, updated_at=datetime('now')`,
 		r.TaskKey, r.Description, r.MinContext, boolToInt(r.NeedsFC), boolToInt(r.NeedsVision),
-		r.MaxCostPerCall, r.CurrentModelID, r.FallbackIDs, r.LastAssigned)
+		r.MaxCostPerCall, r.CurrentModelID, r.FallbackIDs, r.LastAssigned,
+		r.PriorityWeight, boolToInt(r.Enabled), r.TaskKey)
 	return err
 }
 
 func (d *DB) ListRoutingRules() ([]models.RoutingRule, error) {
-	rows, err := d.Query(`SELECT task_key, COALESCE(description,''), COALESCE(min_context,0), COALESCE(needs_fc,0), COALESCE(needs_vision,0), COALESCE(max_cost_per_call,0), COALESCE(current_model_id,''), COALESCE(fallback_ids,''), COALESCE(last_assigned,0) FROM routing_rules ORDER BY task_key`)
+	rows, err := d.Query(`SELECT task_key, COALESCE(description,''), COALESCE(min_context,0), COALESCE(needs_fc,0), COALESCE(needs_vision,0), COALESCE(max_cost_per_call,0), COALESCE(current_model_id,''), COALESCE(fallback_ids,''), COALESCE(last_assigned,0), COALESCE(priority_weight,0), COALESCE(enabled,1) FROM routing_rules ORDER BY task_key`)
 	if err != nil {
 		return nil, err
 	}
@@ -26,28 +31,35 @@ func (d *DB) ListRoutingRules() ([]models.RoutingRule, error) {
 	var out []models.RoutingRule
 	for rows.Next() {
 		var r models.RoutingRule
-		var fc, vis int
-		if err := rows.Scan(&r.TaskKey, &r.Description, &r.MinContext, &fc, &vis, &r.MaxCostPerCall, &r.CurrentModelID, &r.FallbackIDs, &r.LastAssigned); err != nil {
+		var fc, vis, en int
+		if err := rows.Scan(&r.TaskKey, &r.Description, &r.MinContext, &fc, &vis, &r.MaxCostPerCall, &r.CurrentModelID, &r.FallbackIDs, &r.LastAssigned, &r.PriorityWeight, &en); err != nil {
 			return nil, err
 		}
 		r.NeedsFC = fc != 0
 		r.NeedsVision = vis != 0
+		r.Enabled = en != 0
 		out = append(out, r)
 	}
-	return out, nil
+	return out, rows.Err()
 }
 
 func (d *DB) GetRoutingRule(key string) (*models.RoutingRule, error) {
 	var r models.RoutingRule
-	var fc, vis int
-	err := d.QueryRow(`SELECT task_key, COALESCE(description,''), COALESCE(min_context,0), COALESCE(needs_fc,0), COALESCE(needs_vision,0), COALESCE(max_cost_per_call,0), COALESCE(current_model_id,''), COALESCE(fallback_ids,''), COALESCE(last_assigned,0) FROM routing_rules WHERE task_key=?`, key).
-		Scan(&r.TaskKey, &r.Description, &r.MinContext, &fc, &vis, &r.MaxCostPerCall, &r.CurrentModelID, &r.FallbackIDs, &r.LastAssigned)
+	var fc, vis, en int
+	err := d.QueryRow(`SELECT task_key, COALESCE(description,''), COALESCE(min_context,0), COALESCE(needs_fc,0), COALESCE(needs_vision,0), COALESCE(max_cost_per_call,0), COALESCE(current_model_id,''), COALESCE(fallback_ids,''), COALESCE(last_assigned,0), COALESCE(priority_weight,0), COALESCE(enabled,1) FROM routing_rules WHERE task_key=?`, key).
+		Scan(&r.TaskKey, &r.Description, &r.MinContext, &fc, &vis, &r.MaxCostPerCall, &r.CurrentModelID, &r.FallbackIDs, &r.LastAssigned, &r.PriorityWeight, &en)
 	if err != nil {
 		return nil, err
 	}
 	r.NeedsFC = fc != 0
 	r.NeedsVision = vis != 0
+	r.Enabled = en != 0
 	return &r, nil
+}
+
+func (d *DB) DeleteRoutingRule(key string) error {
+	_, err := d.Exec(`DELETE FROM routing_rules WHERE task_key=?`, key)
+	return err
 }
 
 func (d *DB) InsertRoutingEvent(event *models.RoutingEvent) error {
@@ -78,6 +90,7 @@ func (d *DB) ListRoutingEvents(limit int) ([]models.RoutingEvent, error) {
 	return out, nil
 }
 
+// kept manual: upsertRow can't handle datetime('now') expressions
 func (d *DB) UpsertBudget(b *models.BudgetConfig) error {
 	_, err := d.Exec(`INSERT INTO budget_config (id, daily_global_usd, preferred_tier, updated_at) VALUES (?, ?, ?, datetime('now'))
 		ON CONFLICT(id) DO UPDATE SET daily_global_usd=excluded.daily_global_usd, preferred_tier=excluded.preferred_tier, updated_at=datetime('now')`,

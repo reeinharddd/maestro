@@ -1,9 +1,3 @@
-// Package classifier provides the Task Classifier for okit.
-// It implements a hybrid model selection system for classifying user tasks.
-//
-// Copyright 2026 OpenCode Foundation
-// SPDX-License-Identifier: Apache-2.0
-
 package classifier
 
 import (
