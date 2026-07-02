@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 	"testing"
 
 	"github.com/reeinharrrd/maestro/internal/db"
@@ -187,8 +189,8 @@ func TestTestStreaming_NonStreamingResponse(t *testing.T) {
 
 	s := profile.New(&mockDB{})
 	tps, ok := s.TestStreaming(srv.URL, "fake-key", "test-model")
-	assert.True(t, ok) // no error, but no stream tokens either
-	assert.GreaterOrEqual(t, tps, float64(0))
+	assert.False(t, ok)
+	assert.Equal(t, float64(0), tps)
 }
 
 func TestTestStreaming_WithValidStreamData(t *testing.T) {
@@ -196,7 +198,10 @@ func TestTestStreaming_WithValidStreamData(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		for i := 0; i < 5; i++ {
+		fmt.Fprintf(w, "data: {\"choices\":[{\"delta\":{\"content\":\"token%d\"}}]}\n", 0)
+		w.(http.Flusher).Flush()
+		time.Sleep(150 * time.Millisecond)
+		for i := 1; i < 5; i++ {
 			fmt.Fprintf(w, "data: {\"choices\":[{\"delta\":{\"content\":\"token%d\"}}]}\n", i)
 		}
 		fmt.Fprint(w, "data: [DONE]\n")
@@ -323,9 +328,8 @@ func TestEstimateContext_CheckRequestBody(t *testing.T) {
 	t.Parallel()
 	var receivedBody string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		buf := make([]byte, 256)
-		n, _ := r.Body.Read(buf)
-		receivedBody = string(buf[:n])
+		bodyBytes, _ := io.ReadAll(r.Body)
+		receivedBody = string(bodyBytes)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	}))

@@ -137,6 +137,9 @@ func newModelSearchCmd(dbPath *string) *cobra.Command {
 		Short: "Search models by keyword",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("search query required")
+			}
 			d, err := openDB(dbPath)
 			if err != nil {
 				return err
@@ -148,6 +151,7 @@ func newModelSearchCmd(dbPath *string) *cobra.Command {
 			}
 			for _, m := range models {
 				fmt.Printf("%s/%s: %s (ctx: %d, FC: %v, Vis: %v, Reas: %v, Audio: %v, OCR: %v)\n",
+				
 					m.ProviderID, m.ID, m.Status, m.ContextWindow,
 					m.FunctionCalling, m.Vision, m.Reasoning, m.Audio, m.OCR)
 			}

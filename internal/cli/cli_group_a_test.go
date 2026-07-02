@@ -112,17 +112,14 @@ func TestProvidersCmd_Add(t *testing.T) {
 	d.Close()
 
 	cmd := newProvidersCmd(&dbPath)
-	addCmd, _, err := cmd.Find([]string{"add"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	addCmd.SetArgs([]string{
+	cmd.SetArgs([]string{
+		"add",
 		"--id", "test-provider",
 		"--name", "Test Provider",
 		"--api-base", "https://api.test.com",
 		"--key-env", "TEST_API_KEY",
 	})
-	if err := addCmd.RunE(addCmd, nil); err != nil {
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,12 +167,8 @@ func TestProvidersCmd_Update(t *testing.T) {
 	seedProviders(t, dbPath)
 
 	cmd := newProvidersCmd(&dbPath)
-	updateCmd, _, err := cmd.Find([]string{"update"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateCmd.SetArgs([]string{"--id", "openai", "--name", "OpenAI Updated"})
-	if err := updateCmd.RunE(updateCmd, nil); err != nil {
+	cmd.SetArgs([]string{"update", "--id", "openai", "--name", "OpenAI Updated"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -232,12 +225,8 @@ func TestProvidersCmd_Remove(t *testing.T) {
 	seedProviders(t, dbPath)
 
 	cmd := newProvidersCmd(&dbPath)
-	removeCmd, _, err := cmd.Find([]string{"remove"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	removeCmd.SetArgs([]string{"--id", "anthropic"})
-	if err := removeCmd.RunE(removeCmd, nil); err != nil {
+	cmd.SetArgs([]string{"remove", "--id", "anthropic"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -307,6 +296,7 @@ func TestModelsCmd_List_Empty(t *testing.T) {
 func TestModelsCmd_List_WithData(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
+	seedProviders(t, dbPath)
 	seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
@@ -322,6 +312,7 @@ func TestModelsCmd_List_WithData(t *testing.T) {
 func TestModelsCmd_List_Paid(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
+	seedProviders(t, dbPath)
 	seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
@@ -338,6 +329,7 @@ func TestModelsCmd_List_Paid(t *testing.T) {
 func TestModelsCmd_Search_Found(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
+	seedProviders(t, dbPath)
 	seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
@@ -369,8 +361,8 @@ func TestModelsCmd_Search_NotFound(t *testing.T) {
 func TestModelsCmd_Search_MissingArgs(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
-	d, _ := db.Open(dbPath)
-	d.Close()
+	seedProviders(t, dbPath)
+	seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
 	searchCmd, _, err := cmd.Find([]string{"search"})
@@ -385,7 +377,8 @@ func TestModelsCmd_Search_MissingArgs(t *testing.T) {
 func TestModelsCmd_Info(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
-	seedModels(t, dbPath)
+		seedProviders(t, dbPath)
+		seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
 	infoCmd, _, err := cmd.Find([]string{"info"})
@@ -419,11 +412,8 @@ func TestModelsCmd_Add(t *testing.T) {
 	seedProviders(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
-	addCmd, _, err := cmd.Find([]string{"add"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	addCmd.SetArgs([]string{
+	cmd.SetArgs([]string{
+		"add",
 		"--id", "openai/gpt-5",
 		"--provider-id", "openai",
 		"--display-name", "GPT-5",
@@ -431,7 +421,7 @@ func TestModelsCmd_Add(t *testing.T) {
 		"--function-calling",
 		"--vision",
 	})
-	if err := addCmd.RunE(addCmd, nil); err != nil {
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -479,15 +469,12 @@ func TestModelsCmd_Add_MissingRequired(t *testing.T) {
 func TestModelsCmd_Update(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
-	seedModels(t, dbPath)
+		seedProviders(t, dbPath)
+		seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
-	updateCmd, _, err := cmd.Find([]string{"update"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateCmd.SetArgs([]string{"--id", "gpt-4", "--display-name", "GPT-4 Turbo"})
-	if err := updateCmd.RunE(updateCmd, nil); err != nil {
+	cmd.SetArgs([]string{"update", "--id", "gpt-4", "--display-name", "GPT-4 Turbo"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -525,7 +512,8 @@ func TestModelsCmd_Update_NonExistent(t *testing.T) {
 func TestModelsCmd_Update_NoChanges(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
-	seedModels(t, dbPath)
+		seedProviders(t, dbPath)
+		seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
 	updateCmd, _, err := cmd.Find([]string{"update"})
@@ -541,15 +529,12 @@ func TestModelsCmd_Update_NoChanges(t *testing.T) {
 func TestModelsCmd_Remove(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
-	seedModels(t, dbPath)
+		seedProviders(t, dbPath)
+		seedModels(t, dbPath)
 
 	cmd := newModelsCmd(&dbPath)
-	removeCmd, _, err := cmd.Find([]string{"remove"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	removeCmd.SetArgs([]string{"--id", "gpt-4"})
-	if err := removeCmd.RunE(removeCmd, nil); err != nil {
+	cmd.SetArgs([]string{"remove", "--id", "gpt-4"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -655,17 +640,14 @@ func TestCommandsCmd_Add(t *testing.T) {
 	d.Close()
 
 	cmd := newCommandsCmd(&dbPath)
-	addCmd, _, err := cmd.Find([]string{"add"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	addCmd.SetArgs([]string{
+	cmd.SetArgs([]string{
+		"add",
 		"--id", "/my-command",
 		"--template", "Do something with {input}",
 		"--description", "My custom command",
 		"--agent", "coder",
 	})
-	if err := addCmd.RunE(addCmd, nil); err != nil {
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -722,12 +704,8 @@ func TestCommandsCmd_Update(t *testing.T) {
 	seedCommands(t, dbPath)
 
 	cmd := newCommandsCmd(&dbPath)
-	updateCmd, _, err := cmd.Find([]string{"update"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateCmd.SetArgs([]string{"--id", "/test", "--description", "Updated description"})
-	if err := updateCmd.RunE(updateCmd, nil); err != nil {
+	cmd.SetArgs([]string{"update", "--id", "/test", "--description", "Updated description"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -778,12 +756,8 @@ func TestCommandsCmd_Remove(t *testing.T) {
 	seedCommands(t, dbPath)
 
 	cmd := newCommandsCmd(&dbPath)
-	removeCmd, _, err := cmd.Find([]string{"remove"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	removeCmd.SetArgs([]string{"--id", "/test"})
-	if err := removeCmd.RunE(removeCmd, nil); err != nil {
+	cmd.SetArgs([]string{"remove", "--id", "/test"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -831,11 +805,8 @@ func TestAgentsCmd_Add(t *testing.T) {
 	d.Close()
 
 	cmd := newAgentsCmd(&dbPath)
-	addCmd, _, err := cmd.Find([]string{"add"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	addCmd.SetArgs([]string{
+	cmd.SetArgs([]string{
+		"add",
 		"--id", "new-agent",
 		"--task-type", "coding",
 		"--description", "A new coding agent",
@@ -843,7 +814,7 @@ func TestAgentsCmd_Add(t *testing.T) {
 		"--mode", "subagent",
 		"--color", "blue",
 	})
-	if err := addCmd.RunE(addCmd, nil); err != nil {
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -892,17 +863,14 @@ func TestAgentsCmd_Update(t *testing.T) {
 	seedAgents(t, dbPath)
 
 	cmd := newAgentsCmd(&dbPath)
-	updateCmd, _, err := cmd.Find([]string{"update"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateCmd.SetArgs([]string{
+	cmd.SetArgs([]string{
+		"update",
 		"--id", "agent1",
 		"--description", "Updated Agent",
 		"--model", "claude-3",
 		"--mode", "primary",
 	})
-	if err := updateCmd.RunE(updateCmd, nil); err != nil {
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 

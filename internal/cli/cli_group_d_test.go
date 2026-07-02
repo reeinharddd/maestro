@@ -696,8 +696,6 @@ func TestBudgetSet_SetsValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	setCmd.Flags().Float64("daily", 0, "")
-	setCmd.Flags().String("tier", "", "")
 	setCmd.Flags().Set("daily", "10.0")
 	setCmd.Flags().Set("tier", "quality")
 
@@ -929,7 +927,6 @@ func TestExecLogList_Limit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listCmd.Flags().Int("limit", 2, "")
 	listCmd.Flags().Set("limit", "2")
 
 	if err := listCmd.RunE(listCmd, nil); err != nil {
@@ -965,6 +962,8 @@ func TestModelProfilesList_PrintsAll(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
+	seedProviders(t, dbPath)
+	seedModelsForView(t, dbPath)
 	seedModelProfiles(t, dbPath)
 
 	cmd := newModelProfilesCmd(&dbPath)
@@ -1001,6 +1000,7 @@ func TestModelsView_PrintsAll(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "maestro.db")
+	seedProviders(t, dbPath)
 	seedModelsForView(t, dbPath)
 
 	cmd := newModelsViewCmd(&dbPath)

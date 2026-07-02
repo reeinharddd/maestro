@@ -387,6 +387,9 @@ func TestSourceItemsCmd_ListWithItems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := d.UpsertSource(&models.Source{ID: "src1", RemoteURL: "https://github.com/test", Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
 	if err := d.UpsertSourceItem(&models.SourceItem{
 		ID: "src-item-1", SourceID: "src1", Type: "skill", Status: "active",
 	}); err != nil {
@@ -431,6 +434,9 @@ func TestSourceItemsCmd_ReportWithItems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := d.UpsertSource(&models.Source{ID: "s1", RemoteURL: "https://github.com/test", Status: "active"}); err != nil {
+		t.Fatal(err)
+	}
 	if err := d.UpsertSourceItem(&models.SourceItem{
 		ID: "si-1", SourceID: "s1", Type: "skill", Status: "active",
 	}); err != nil {
@@ -439,8 +445,8 @@ func TestSourceItemsCmd_ReportWithItems(t *testing.T) {
 	d.Close()
 
 	cmd := newSourceItemsCmd(&dbPath)
-	reportCmd, _, _ := cmd.Find([]string{"report"})
-	if err := reportCmd.RunE(reportCmd, nil); err != nil {
+	cmd.SetArgs([]string{"report"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -498,7 +504,6 @@ func TestCompressCmd_Subcommands(t *testing.T) {
 }
 
 func TestCompressCmd_Demo(t *testing.T) {
-	t.Parallel()
 	dir := t.TempDir()
 	t.Setenv("OPENCODE_CONFIG_DIR", dir)
 
@@ -519,19 +524,17 @@ func TestCompressCmd_Prune(t *testing.T) {
 }
 
 func TestCompressCmd_ReportEmpty(t *testing.T) {
-	t.Parallel()
 	dir := t.TempDir()
 	t.Setenv("OPENCODE_CONFIG_DIR", dir)
 
 	cmd := newCompressCmd()
-	reportCmd, _, _ := cmd.Find([]string{"report"})
-	if err := reportCmd.RunE(reportCmd, nil); err != nil {
+	cmd.SetArgs([]string{"report"})
+	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestCompressCmd_Save(t *testing.T) {
-	t.Parallel()
 	dir := t.TempDir()
 	t.Setenv("OPENCODE_CONFIG_DIR", dir)
 
