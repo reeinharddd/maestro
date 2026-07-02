@@ -117,8 +117,9 @@ func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 
 	// ── Agents ──
 	for agentID, agentCfg := range cfg.Agents {
+		id := normalizeAgentID(agentID)
 		_ = s.db.UpsertAgent(&models.Agent{
-			ID:             agentID,
+			ID:             id,
 			Description:    agentCfg.Description,
 			CurrentModelID: agentCfg.Model,
 			Mode:           agentCfg.Mode,
@@ -127,7 +128,7 @@ func (s *Service) ImportFromOpenCodeConfig(configPath string) (*Diff, error) {
 			Source:         "opencode",
 			Status:         "active",
 		})
-		diff.AddedAgents = append(diff.AddedAgents, agentID)
+		diff.AddedAgents = append(diff.AddedAgents, id)
 	}
 
 	// ── Commands ──
