@@ -78,12 +78,61 @@ func (bs *BitwardenStore) Set(ctx context.Context, service, key, value string) e
 }
 
 func (bs *BitwardenStore) updateField(ctx context.Context, session, service, key, value string) error {
-	data := fmt.Sprintf(`{"fields":[{"name":"%s","value":"%s","type":0}]}`, key, value)
-	encoded := base64.StdEncoding.EncodeToString([]byte(data))
-	cmd := bs.bwCmd(ctx, session, "edit", "item", service, encoded)
-	out, err := cmd.CombinedOutput()
+	// Get the full item from Bitwarden to get its ID and structure
+	getCmd := bs.bwCmd(ctx, session, "get", "item", service)
+	raw, err := getCmd.Output()
 	if err != nil {
-		return fmt.Errorf("bw edit: %s", string(out))
+		return fmt.Errorf("bw get item %s: %w", service, err)
+	}
+
+	// Parse item to get fields and id
+	var item struct {
+		ID     string `json:"id"`
+		Fields []struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+			Type  int    `json:"type"`
+		} `json:"fields"`
+	}
+	if err := json.Unmarshal(raw, &item); err != nil {
+		return fmt.Errorf("parse bw item: %w", err)
+	}
+
+	// Update existing field or append new one
+	found := false
+	for i := range item.Fields {
+		if item.Fields[i].Name == key {
+			item.Fields[i].Value = value
+			found = true
+			break
+		}
+	}
+	if !found {
+		item.Fields = append(item.Fields, struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+			Type  int    `json:"type"`
+		}{Name: key, Value: value, Type: 0})
+	}
+
+	// Re-serialize only the fields portion we need to update
+	patch := struct {
+		Fields []struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+			Type  int    `json:"type"`
+		} `json:"fields"`
+	}{Fields: item.Fields}
+	patchJSON, err := json.Marshal(patch)
+	if err != nil {
+		return fmt.Errorf("marshal patch: %w", err)
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(patchJSON)
+	editCmd := bs.bwCmd(ctx, session, "edit", "item", item.ID, encoded)
+	out, err := editCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("bw edit item %s: %s", item.ID, string(out))
 	}
 	return nil
 }
@@ -107,10 +156,54 @@ func (bs *BitwardenStore) Delete(ctx context.Context, service, key string) error
 	if err != nil {
 		return err
 	}
-	data := fmt.Sprintf(`{"fields":[{"name":"%s","value":"","type":0}]}`, key)
-	encoded := base64.StdEncoding.EncodeToString([]byte(data))
-	cmd := bs.bwCmd(ctx, session, "edit", "item", service, encoded)
-	return cmd.Run()
+
+	// Get full item to get its ID
+	getCmd := bs.bwCmd(ctx, session, "get", "item", service)
+	raw, err := getCmd.Output()
+	if err != nil {
+		return fmt.Errorf("bw get item %s: %w", service, err)
+	}
+
+	// Parse and remove the field
+	var item struct {
+		ID     string `json:"id"`
+		Fields []struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+			Type  int    `json:"type"`
+		} `json:"fields"`
+	}
+	if err := json.Unmarshal(raw, &item); err != nil {
+		return fmt.Errorf("parse bw item: %w", err)
+	}
+
+	// Filter out the key to remove
+	var updatedFields []struct {
+		Name  string `json:"name"`
+		Value string `json:"value"`
+		Type  int    `json:"type"`
+	}
+	for _, f := range item.Fields {
+		if f.Name != key {
+			updatedFields = append(updatedFields, f)
+		}
+	}
+
+	patch := struct {
+		Fields []struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+			Type  int    `json:"type"`
+		} `json:"fields"`
+	}{Fields: updatedFields}
+	patchJSON, err := json.Marshal(patch)
+	if err != nil {
+		return fmt.Errorf("marshal patch: %w", err)
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(patchJSON)
+	editCmd := bs.bwCmd(ctx, session, "edit", "item", item.ID, encoded)
+	return editCmd.Run()
 }
 
 func (bs *BitwardenStore) List(ctx context.Context, service string) (map[string]string, error) {
