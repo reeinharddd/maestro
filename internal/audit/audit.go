@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/internal/credentials"
 	"github.com/reeinharrrd/maestro/pkg/models"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -51,7 +51,7 @@ func (s *Service) Run(ctx context.Context, full bool) error {
 		if prov.Status != "active" {
 			continue
 		}
-		apiKey := os.Getenv(prov.KeyEnv)
+		apiKey := credentials.ResolveKey(ctx, prov.KeyEnv)
 		if apiKey == "" {
 			continue
 		}
@@ -117,7 +117,7 @@ func (s *Service) testModel(ctx context.Context, prov models.Provider, m models.
 			LastTested: time.Now().Unix(),
 		}
 	}
-	apiKey := os.Getenv(prov.KeyEnv)
+	apiKey := credentials.ResolveKey(ctx, prov.KeyEnv)
 	endpoint := strings.TrimRight(baseURL, "/") + "/chat/completions"
 
 	client := &http.Client{Timeout: 30 * time.Second}

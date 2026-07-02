@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/reeinharrrd/maestro/internal/classifier"
+	"github.com/reeinharrrd/maestro/internal/credentials"
 	"github.com/reeinharrrd/maestro/internal/db"
 	"github.com/reeinharrrd/maestro/pkg/models"
-	"github.com/reeinharrrd/maestro/internal/classifier"
 )
 
 type Service struct {
@@ -93,9 +93,8 @@ func (s *Service) Discover(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("list providers: %w", err)
 	}
-
 	for _, prov := range providers {
-		apiKey := os.Getenv(prov.KeyEnv)
+		apiKey := credentials.ResolveKey(ctx, prov.KeyEnv)
 		if apiKey == "" {
 			continue
 		}
@@ -312,7 +311,7 @@ func DetectAvailableProviders(querier interface{ ListProviders() ([]models.Provi
 	}
 	var out []string
 	for _, p := range providers {
-		if os.Getenv(p.KeyEnv) != "" {
+		if credentials.ResolveKey(context.Background(), p.KeyEnv) != "" {
 			out = append(out, p.ID)
 		}
 	}

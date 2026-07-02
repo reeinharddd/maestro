@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/reeinharrrd/maestro/internal/credentials"
 	"github.com/reeinharrrd/maestro/internal/db"
 	"github.com/reeinharrrd/maestro/internal/heal"
 	"github.com/spf13/cobra"
@@ -40,6 +41,7 @@ audits capabilities, generates optimal config, and auto-heals issues.
 				}
 				d.Close()
 			}
+			initDefaultCredentialStore()
 			return nil
 		},
 	}
@@ -61,6 +63,7 @@ audits capabilities, generates optimal config, and auto-heals issues.
 	root.AddCommand(newRouteCmd(&dbPath))
 	root.AddCommand(newHealCmd(&dbPath))
 	root.AddCommand(newKeysCmd())
+	root.AddCommand(newCredentialsCmd())
 	root.AddCommand(newVerifyCmd())
 	root.AddCommand(newDoctorCmd())
 	root.AddCommand(newInitCmd())
@@ -110,4 +113,16 @@ func newModelsCmd(dbPath *string) *cobra.Command {
 
 func newCommandsCmd(dbPath *string) *cobra.Command {
 	return newCommandsCmdImpl(dbPath)
+}
+
+func initDefaultCredentialStore() {
+	store, err := credentials.NewStore(credentials.Config{
+		Backend: "bitwarden",
+		Options: map[string]string{"service": "opencode"},
+	})
+	if err != nil {
+		return
+	}
+	credentials.SetDefaultStore(store)
+	slog.Debug("default credential store: bitwarden")
 }

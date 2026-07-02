@@ -2,8 +2,10 @@ package credentials
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -18,20 +20,22 @@ func NewBitwardenStore(opts map[string]string) (*BitwardenStore, error) {
 }
 
 func (bs *BitwardenStore) getSession(ctx context.Context) (string, error) {
+	if s := os.Getenv("BW_SESSION"); s != "" {
+		return s, nil
+	}
 	cmd := exec.CommandContext(ctx, "bw", "unlock", "--raw")
+	cmd.Env = os.Environ()
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("bw unlock failed: %w", err)
+		return "", fmt.Errorf("bw unlock failed (set BW_SESSION env var): %w", err)
 	}
 	return strings.TrimSpace(string(output)), nil
 }
 
-func (bs *BitwardenStore) runBw(ctx context.Context, session string, args ...string) ([]byte, error) {
+func (bs *BitwardenStore) bwCmd(ctx context.Context, session string, args ...string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, "bw", args...)
-	if session != "" {
-		cmd.Env = append(cmd.Env, "BW_SESSION="+session)
-	}
-	return cmd.Output()
+	cmd.Env = append(os.Environ(), "BW_SESSION="+session)
+	return cmd
 }
 
 func (bs *BitwardenStore) Get(ctx context.Context, service, key string) (string, error) {
@@ -39,8 +43,7 @@ func (bs *BitwardenStore) Get(ctx context.Context, service, key string) (string,
 	if err != nil {
 		return "", err
 	}
-	cmd := exec.CommandContext(ctx, "bw", "get", "item", service)
-	cmd.Env = append(cmd.Env, "BW_SESSION="+session)
+	cmd := bs.bwCmd(ctx, session, "get", "item", service)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("bw get item %s: %w", service, err)
@@ -67,15 +70,36 @@ func (bs *BitwardenStore) Set(ctx context.Context, service, key, value string) e
 	if err != nil {
 		return err
 	}
-	existing, _ := bs.Get(ctx, service, key)
-	if existing != "" {
-		cmd := exec.CommandContext(ctx, "bw", "edit", "item", service, "--field", key, "--value", value)
-		cmd.Env = append(cmd.Env, "BW_SESSION="+session)
-		return cmd.Run()
+	existing, _ := bs.List(ctx, service)
+	if len(existing) > 0 {
+		return bs.updateField(ctx, session, service, key, value)
 	}
-	cmd := exec.CommandContext(ctx, "bw", "create", "item", "login", "--name", service, "--field", key+"="+value)
-	cmd.Env = append(cmd.Env, "BW_SESSION="+session)
-	return cmd.Run()
+	return bs.createItem(ctx, session, service, key, value)
+}
+
+func (bs *BitwardenStore) updateField(ctx context.Context, session, service, key, value string) error {
+	data := fmt.Sprintf(`{"fields":[{"name":"%s","value":"%s","type":0}]}`, key, value)
+	encoded := base64.StdEncoding.EncodeToString([]byte(data))
+	cmd := bs.bwCmd(ctx, session, "edit", "item", service, encoded)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("bw edit: %s", string(out))
+	}
+	return nil
+}
+
+func (bs *BitwardenStore) createItem(ctx context.Context, session, service, key, value string) error {
+	data := fmt.Sprintf(
+		`{"type":1,"name":"%s","login":{"username":"%s"},"fields":[{"name":"%s","value":"%s","type":0}]}`,
+		service, service, key, value,
+	)
+	encoded := base64.StdEncoding.EncodeToString([]byte(data))
+	cmd := bs.bwCmd(ctx, session, "create", "item", encoded)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("bw create: %s", string(out))
+	}
+	return nil
 }
 
 func (bs *BitwardenStore) Delete(ctx context.Context, service, key string) error {
@@ -83,8 +107,9 @@ func (bs *BitwardenStore) Delete(ctx context.Context, service, key string) error
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "bw", "edit", "item", service, "--field", key, "--value", "")
-	cmd.Env = append(cmd.Env, "BW_SESSION="+session)
+	data := fmt.Sprintf(`{"fields":[{"name":"%s","value":"","type":0}]}`, key)
+	encoded := base64.StdEncoding.EncodeToString([]byte(data))
+	cmd := bs.bwCmd(ctx, session, "edit", "item", service, encoded)
 	return cmd.Run()
 }
 
@@ -93,8 +118,7 @@ func (bs *BitwardenStore) List(ctx context.Context, service string) (map[string]
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.CommandContext(ctx, "bw", "get", "item", service)
-	cmd.Env = append(cmd.Env, "BW_SESSION="+session)
+	cmd := bs.bwCmd(ctx, session, "get", "item", service)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("bw get item %s: %w", service, err)
@@ -116,14 +140,24 @@ func (bs *BitwardenStore) List(ctx context.Context, service string) (map[string]
 }
 
 func (bs *BitwardenStore) Test(ctx context.Context, service string) error {
-	session, err := bs.getSession(ctx)
+	cmd := exec.CommandContext(ctx, "bw", "status")
+	cmd.Env = os.Environ()
+	output, err := cmd.Output()
 	if err != nil {
-		return err
+		return fmt.Errorf("bw not accessible: %w", err)
 	}
-	cmd := exec.CommandContext(ctx, "bw", "get", "item", service)
-	cmd.Env = append(cmd.Env, "BW_SESSION="+session)
-	_, err = cmd.Output()
-	return err
+	var status struct {
+		Status string `json:"status"`
+		Email  string `json:"userEmail"`
+	}
+	if err := json.Unmarshal(output, &status); err != nil {
+		return fmt.Errorf("parse bw status: %w", err)
+	}
+	if status.Status == "locked" {
+		return fmt.Errorf("vault is locked - run 'bw unlock --raw' and set BW_SESSION")
+	}
+	fmt.Printf("  bw status: %s (user: %s)\n", status.Status, status.Email)
+	return nil
 }
 
 func (bs *BitwardenStore) Name() string {

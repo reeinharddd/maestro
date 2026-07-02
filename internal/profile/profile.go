@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/reeinharrrd/maestro/internal/db"
+	"github.com/reeinharrrd/maestro/internal/credentials"
 	"github.com/reeinharrrd/maestro/pkg/models"
 	"golang.org/x/sync/errgroup"
 )
@@ -62,7 +62,7 @@ func (s *Service) ProfileAll(ctx context.Context, full bool) error {
 }
 
 func (s *Service) ProfileModel(ctx context.Context, provider models.Provider, model models.Model) (*models.ModelProfile, error) {
-	apiKey := os.Getenv(provider.KeyEnv)
+	apiKey := credentials.ResolveKey(ctx, provider.KeyEnv)
 	if apiKey == "" {
 		return nil, fmt.Errorf("no API key for %s", provider.KeyEnv)
 	}

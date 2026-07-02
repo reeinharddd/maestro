@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/reeinharrrd/maestro/pkg/models"
+	"github.com/reeinharrrd/maestro/internal/credentials"
 )
 
 type LiveProviderResult struct {
@@ -68,7 +68,7 @@ func NewLive(db dbReader, workers int) *Live {
 }
 
 func (l *Live) FetchRealModels(ctx context.Context, prov *models.Provider) ([]string, error) {
-	apiKey := os.Getenv(prov.KeyEnv)
+	apiKey := credentials.ResolveKey(ctx, prov.KeyEnv)
 	if apiKey == "" {
 		return nil, fmt.Errorf("missing API key %s", prov.KeyEnv)
 	}
@@ -201,7 +201,7 @@ func (l *Live) SmokeAll(ctx context.Context, opts SmokeOpts) ([]LiveModelResult,
 		if p.BaseURL == "" {
 			continue
 		}
-		apiKey := os.Getenv(p.KeyEnv)
+		apiKey := credentials.ResolveKey(ctx, p.KeyEnv)
 		if apiKey == "" {
 			continue
 		}
